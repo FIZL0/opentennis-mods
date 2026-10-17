@@ -95,48 +95,100 @@ def heights():
 
 # ---- voices ---------------------------------------------------------------------------------------------------
 
-def _guts(pc, code):
-    """{celebration: bank number} from the costume-0 celebration archives PCNN00SS.XB, each holding one ga_ motion
-    and the g_<code>K voice bank played with it (GAME.BIN 'GUTSVOICE')."""
-    out = {}
-    for x in sorted(glob.glob(_p(f"out/files/fore/PC/PC{pc:02d}/PC{pc:02d}00[0-9][0-9].XB"))):
-        ga = [os.path.basename(f) for f in glob.glob(f"{x}/**/ga_*.ani", recursive=True)]
-        g = [re.match(rf"g_{code}(\d+)\.hd", os.path.basename(f)) for f in glob.glob(f"{x}/**/g_*.hd", recursive=True)]
-        if len(ga) == 1 and len(g) == 1 and g[0]:
-            out[ga[0][8:-4]] = int(g[0].group(1))  # 'ea_r00' -> 5
-    return out
+# Voice picks per character, sorted by what each take says (every cue transcribed with faster-whisper small, English;
+# opentennis B562). Fore! has no effort shout and no event that matches a tennis program one to one, so each program
+# gets the takes whose words fit it:
+#   0/1/3 stroke shouts: short (about a second at most) power / "yes" exclamations only (jy0/jy1 mostly, a few one-word co/ya/sc
+#         lines); never a sentence or a bad-shot line, they play on most strokes.
+#   2 mis-hit, 4 whiff: short bad-shot / surprised lines (jy2 mostly, "Oops."-type co/ya lines).
+#   7 point won, 9 set won: the par/birdie/eagle celebrations (g) that say something happy, co/sc boasts, and for 9
+#         the versus-result lines (vs) that are a win.
+#   8 point lost, 10 set lost: laments only (jy2/jy3/jy4 groans, co/sc "not my day" lines, the losing vs lines, the
+#         bogey g bank when it is a lament: Fore!'s bogey is often a laugh, e.g. Hubert's, and then it is left out).
+#   5 (hit by the ball), 6 (partner calls): none, see notes/fore.md.
+# Tags: jyN / gN = bank jy_<code>N / g_<code>N (g: 1 bogey, 2 par, 3/4 birdie, 5/6 eagle, by the costume-0
+# celebration archive PCNN00SS.XB each sits in, its ga_ motion naming the result; Z's 7-10 are extra takes);
+# co.N / ya.N = take N of co_<code> / ya_<code>; vsNN / scNN = bank vs_<code>NN / sc_<code>NN (vsNN.K / scNN.K: take K,
+# else the first). Transcripts stay out of git (game data); notes/fore.md "Voices" says how to rebuild them.
+PICKS = {
+    0: {0: "jy0 jy1", 1: "jy0 jy1 ya.3 co.10", 3: "jy1 jy0", 2: "co.7 jy2", 4: "co.13",
+        7: "g2 g4 co.11 co.10", 8: "sc15 co.7 co.4 sc18", 9: "g5 g4 vs00 vs02", 10: "vs07 vs06 vs04 vs05"},
+    1: {0: "co.11 jy1 co.8", 1: "co.8 co.4 vs00.3 co.11 jy1", 3: "co.1 co.11 co.8", 2: "jy3 co.7 sc16", 4: "co.7 jy0",
+        7: "g2 g3 g4 sc14 co.5", 8: "g1 sc16 sc18 co.12 vs00.6", 9: "g5 g3 vs00.2 vs00.3 vs00.4",
+        10: "vs00.8 vs00.7 vs00.6 g1 vs00.5"},
+    2: {0: "jy1 jy0", 1: "jy1 jy0 ya.3 sc03", 3: "jy1 jy0 sc03", 2: "co.6 jy2", 4: "co.6 jy2",
+        7: "g2 g3 co.2 co.1", 8: "g1 jy4 co.6 sc17", 9: "g4 g3 co.2 vs02", 10: "vs05 vs07 vs04 g1 jy4"},
+    3: {0: "jy0 jy1 ya.1", 1: "jy0 jy1 ya.1 ya.3 ya.2", 3: "jy0 jy1 ya.1", 2: "jy3 jy2", 4: "jy3",
+        7: "g2 g3 g4 co.1", 8: "g1 jy3 sc19 vs06", 9: "g5 g6 vs00 g2", 10: "vs06 vs07 g1 sc19"},
+    4: {0: "jy0 ya.6", 1: "jy0 ya.6", 3: "jy0 ya.6", 2: "jy2 sc14", 4: "sc14 ya.2",
+        7: "co.2 g2 g4 co.1", 8: "g1 sc14 co.10", 9: "vs02 g4 g3 vs00", 10: "vs05 vs06 g1"},
+    5: {0: "jy3 jy0 ya.11", 1: "jy3 jy4 ya.3 jy0", 3: "jy3 jy0 ya.11", 2: "jy2", 4: "jy2",
+        7: "g2 g3 g4 vs00", 8: "g1 jy2 sc21", 9: "g5 vs00 g3", 10: "vs06 sc21 g1 vs07"},
+    6: {0: "jy0 jy1 ya.6", 1: "jy0 jy1 ya.6", 3: "ya.6 jy1 jy0", 2: "jy4 jy2", 4: "jy4 jy2",
+        7: "co.1 g2 g3 g4", 8: "g1 jy4 co.3", 9: "g5 g2 co.11", 10: "co.3 g1 jy4"},
+    7: {0: "ya.8 jy1 co.1", 1: "ya.8 jy1 co.1 jy0", 3: "ya.8 jy0 jy1", 2: "jy3 jy2", 4: "jy3",
+        7: "g2 g4 co.4 co.11", 8: "g1 jy2 sc14", 9: "g5 g3 co.5 jy5", 10: "g1 sc14 vs04"},
+    8: {0: "co.1", 1: "co.1 co.4 sc01", 3: "co.1", 2: "jy1 jy4 jy0", 4: "jy0",
+        7: "g2 g3 g4 co.5", 8: "jy4 co.6 co.13 sc16", 9: "g5 g4 sc01 co.11", 10: "co.13 co.6 vs04 vs05 sc16"},
+    9: {0: "jy0 jy1", 1: "jy0 jy1", 3: "jy1 jy0", 2: "jy2 co.3", 4: "ya.6 jy2",
+        7: "g2 g4 co.4 co.5", 8: "co.7 jy2 co.6", 9: "co.1 g5 vs00 g4", 10: "vs07 vs06 vs04 co.7"},
+    10: {0: "jy0 ya.11", 1: "jy0 ya.11 jy1", 3: "jy0 jy1 ya.11", 2: "jy2 co.8", 4: "jy2 co.8",
+         7: "g2 g3 jy4 g4", 8: "g1 jy2 co.12", 9: "g5 g4 vs00 vs03", 10: "g1 vs05"},
+    11: {0: "jy1 ya.9 co.4", 1: "jy1 ya.9 co.9 co.4", 3: "jy1 ya.9", 2: "jy2 co.6", 4: "jy2 co.8",
+         7: "g3 g2 g8 co.11", 8: "g1 jy2 sc21 vs07", 9: "g5 g10 vs00 vs01", 10: "vs06 vs04 vs07 g1"},
+    12: {0: "jy1 jy0", 1: "jy0 jy1 jy3 jy2", 3: "jy1 jy0 jy3", 2: "sc21 co.7", 4: "sc21",
+         7: "co.1 co.8 g3 co.13", 8: "g1 co.3 vs07 sc23", 9: "co.2 g6 g4 vs00", 10: "vs07 vs04 g1 sc23"},
+    13: {0: "jy1 jy0", 1: "jy0 jy1", 3: "jy1 jy0", 2: "jy2 co.6 ya.7", 4: "ya.7 jy2",
+         7: "g2 g3 sc07 jy6", 8: "jy4 co.6 ya.7", 9: "g5 g4 vs07 g6 g1", 10: "vs05 vs04 jy4 co.6"},
+    14: {0: "jy0 jy1 co.6", 1: "jy0 jy1 co.6 ya.3 ya.2", 3: "jy0 co.6 ya.2", 2: "jy2 ya.7 jy3", 4: "ya.7 jy2",
+         7: "g2 g3 co.4 co.2", 8: "g1 jy4 jy3", 9: "g5 g6 sc05 vs02", 10: "vs05 vs07 g1 vs06"},
+    15: {0: "jy1 jy0", 1: "jy1 jy0", 3: "jy1 jy0", 2: "jy3 jy4", 4: "jy3",
+         7: "g3 g5 co.1 vs01", 8: "jy4 co.7 vs06", 9: "g6 vs07 vs01 g3 g5", 10: "vs06 co.7 jy4"},
+    16: {0: "jy3 sc05", 1: "sc05 jy3 ya.2", 3: "sc05 jy3", 2: "co.7 jy2", 4: "co.7 jy2",
+         7: "g3 g5 co.5 co.2", 8: "g1 jy4 co.7 co.3", 9: "g6 g4 vs02 vs01 g2", 10: "jy4 g1 co.3"},
+    17: {0: "jy1 jy2", 1: "jy1 jy2 co.5", 3: "jy1 jy2", 2: "sc23", 4: "sc23",
+         7: "g2 g3 g4 sc14", 8: "sc23 vs06 co.10", 9: "g5 g6 vs01 co.1", 10: "vs06 sc23 co.10"},
+    18: {0: "sc08 ya.1", 1: "sc08 ya.1 jy3 ya.11", 3: "sc08 ya.1", 2: "jy0 co.6", 4: "jy0",
+         7: "g3 co.2 sc07 sc01", 8: "co.6 sc17 co.10 g1", 9: "co.11 g3 jy5 g4", 10: "vs06 vs05 sc17 co.10"},
+    19: {0: "jy4 jy0", 1: "jy4 jy0 jy2", 3: "jy4 jy0", 2: "co.7 ya.6", 4: "co.7",
+         7: "g3 g2 co.2 sc08", 8: "g1 vs04 ya.6 sc21", 9: "g6 vs01 g3 sc08", 10: "vs04 vs07 vs05 sc21 g1"},
+    20: {0: "jy1 sc08", 1: "jy1 sc08", 3: "jy1", 2: "jy2", 4: "jy0",
+         7: "co.2 co.1 g5 g4", 8: "g1 co.6 co.7 co.3", 9: "vs00 vs02 g4 g5 vs03", 10: "vs04 co.3 g1 co.7"},
+    21: {0: "jy1 jy0", 1: "jy1 jy0", 3: "jy1 jy0", 2: "jy2 jy3", 4: "jy2",
+         7: "g3 g4 co.4 g2", 8: "jy3 jy2 co.12 vs07", 9: "g6 g5 vs00 vs01", 10: "vs07 vs06 co.12 jy3"},
+    22: {0: "jy0 jy1", 1: "jy0 jy1 co.5", 3: "jy0 jy1", 2: "jy4 jy2", 4: "jy2",
+         7: "g2 g4 g3 co.10", 8: "g1 jy4 jy3 vs04", 9: "g5 g6 jy5 vs01 vs00", 10: "vs04 vs06 vs07 g1 vs05"},
+    23: {0: "jy0 jy4", 1: "jy0 jy4 ya.2 ya.7", 3: "jy0 jy4", 2: "jy2 co.10", 4: "jy2",
+         7: "g6 co.5 g2 co.3", 8: "co.10 sc15.1 jy2 g1", 9: "g4 vs01 vs02 vs00 co.4", 10: "vs03 vs07 vs04 g1 co.10"},
+}
+WHY = {0: "short power / 'yes' exclamations only, picked by transcript (Fore! has no effort shout)",
+       1: "short good-shot exclamations, picked by transcript (no sentences, no bad-shot lines)",
+       2: "short bad-shot lines (jy groans, 'oops'-type comments), picked by transcript",
+       3: "same kind as program 0: short exclamations (golf has no dive)",
+       4: "short surprised / bad-shot lines, picked by transcript (golf has no whiff voice)",
+       6: "none: golf has no partner calls (sc/vs are per-opponent and versus-result lines)",
+       7: "happy par/birdie celebrations (g) and boasts (co/sc), picked by transcript",
+       8: "laments only: groans, 'not my day' comments, the bogey line when it is one (Fore!'s bogey is often a laugh)",
+       9: "happy eagle/birdie celebrations and winning versus-result lines (vs), picked by transcript",
+       10: "losing versus-result lines and laments, picked by transcript"}
 
 
-def _wav(pc, bank):
-    return sorted(glob.glob(_p(f"out/voices/fore/pc{pc:02d}/{bank}_[0-9][0-9][0-9].wav")))
+def _tag(pc, code, t):
+    """One PICKS tag -> its wav (see PICKS)."""
+    m = re.fullmatch(r"(jy|g|co|ya|vs|sc)(\d*)(?:\.(\d+))?", t)
+    k, bank, take = m.groups()
+    name = f"{k}_{code}{bank}_{int(take or 1):03d}" if k in ("vs", "sc") or bank else f"{k}_{code}_{int(take):03d}"
+    f = _p(f"out/voices/fore/pc{pc:02d}/{name}.wav")
+    assert os.path.exists(f), f
+    return f
 
 
 def voices(pc):
-    """({program: [wav]}, {program: why}). Labelled by the data, not by listening:
-    g_<code>K: one per hole-result celebration, paired in its archive (bogey 1, par 2, birdie 3/4, eagle 5/6).
-    jy_<code>0-4: loaded with the five shot reactions re_ga/os/bw/lp/tp in that archive order; their face morphs
-    say ga/os/bw are upset (anger/sorrow) and lp/tp happy (smile/joy). The jy<->reaction pairing is by order only.
-    jy5/6 (JY_<code>.XB): one of the two at random after a wait (code: elapsed time >= a threshold) — not used.
-    ya/co/sc/vs: named next to BOOING/GALLERY in GAME.BIN's sound list (ya = 野次 heckles, co, sc = 24 per-opponent,
-    vs = versus) — no tennis meaning, not used."""
+    """({program: [wav]}, {program: why}) from PICKS. jy5/6 (played after a timed wait: encouragement aimed at the
+    other player) and mepc (menu banter) are not used."""
     code = roster()[pc][1]
-    gut = _guts(pc, code)
-    g = lambda *k: [w for c in k if c in gut for w in _wav(pc, f"g_{code}{gut[c]}")]
-    jy = lambda *k: [w for i in k for w in _wav(pc, f"jy_{code}{i}")]
-    prog = {0: jy(4, 3), 1: jy(4, 3), 2: jy(0, 1, 2), 3: jy(4, 3), 4: jy(0, 1),
-            7: g("bi_r00", "bi_r01", "pa_r00"), 8: g("bo_r00"), 9: g("ea_r00", "ea_r01", "bi_r00"), 10: g("bo_r00")}
-    why = {0: "jy4/jy3, the voices loaded with the happy tp/lp shot reactions (heuristic: Fore has no effort shout)",
-           1: "jy4/jy3, the happy post-shot exclamations (heuristic)",
-           2: "jy0/1/2, loaded with the upset ga (がっかり)/os (惜しい)/bw reactions: bad-shot groans",
-           3: "same as program 0 (heuristic: no dive in golf)",
-           4: "jy0/1, the ga/os groans (heuristic: no whiff voice)",
-           6: "none: golf has no partner calls (sc/vs are per-opponent versus lines)",
-           7: "g banks of the birdie (r00, r01) and par celebrations",
-           8: "g bank of the bogey celebration (Fore's only losing line)",
-           9: "g banks of the eagle (r00, r01) and birdie celebrations",
-           10: "g bank of the bogey celebration (same line as program 8)"}
-    prog = {k: v for k, v in prog.items() if v}
-    return prog, {k: w for k, w in why.items() if k in prog or k == 6}
+    prog = {p: [_tag(pc, code, t) for t in tags.split()] for p, tags in PICKS[pc].items()}
+    return prog, {k: w for k, w in WHY.items() if k in prog or k == 6}
 
 
 # ---- reactions ------------------------------------------------------------------------------------------------

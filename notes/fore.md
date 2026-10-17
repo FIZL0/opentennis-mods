@@ -125,21 +125,22 @@ bodies it comes from the roster.
 
 **Voices**:
 - Each hole-result celebration archive `PCNN00SS.XB` pairs one `ga_` motion with one `g_<code>K` bank:
-  bogey 1, par 2, birdie 3 (r01: 4), eagle 5 (r01: 6). These banks feed:
-  - 7 ← birdie + par
-  - 9 ← eagle + birdie
-  - 8 and 10 ← bogey
-- `jy_<code>0-4` are packed in the swing archive in the same order as the reactions `re_ga, os, bw, lp, tp`. The
-  face morphs show ga/os/bw as upset and lp/tp as happy. So:
-  - 2/4 ← jy0-2 (groans)
-  - 0/1/3 ← jy3-4
-  - This is a heuristic: the pairing is by order, and golf has no effort shouts.
-- `jy5/6` are played at random after a timed wait.
-- GAME.BIN's sound-slot list names `ya`/`co` next to BOOING/GALLERY. `sc` is 24 lines, one per opponent; `vs`
-  is versus lines. None of these are used.
+  bogey 1, par 2, birdie 3 (r01: 4), eagle 5 (r01: 6). Z has 10 banks (7-10: extra takes).
+- What each bank says (every cue transcribed with faster-whisper small, English, opentennis B562; the transcripts are
+  game data, rebuilt into opentennis `context/fore-voices/`, not in git):
+  - `jy0/jy1`: mostly short power / good-shot exclamations; `jy2`: short bad-shot groans; `jy3`: pleas to a
+    rolling ball ("keep going"), some of them bad-shot lines; `jy4`: a mixed after-shot verdict. The order does
+    not follow the reactions `re_ga, os, bw, lp, tp` packed beside them (the old pairing heuristic was wrong).
+  - `jy5/6` (played at random after a timed wait): encouragement for the other player.
+  - `g`: the hole-result lines; the bogey one is often a joke or a laugh, not a lament.
+  - `co` (13): comments on a shot, mostly one's own; `ya` (12): heckles / praise for the opponent's; `sc` (24): one line per
+    opponent; `vs` (8): versus-result lines, roughly 00-03 a win and 04-07 a loss (Mike: eight takes of `vs00`).
+- `fore_data.py PICKS` sorts them per character by what they say: 0/1/3 only short exclamations (no sentences, no
+  bad-shot lines: they play on most strokes), 2/4 short bad-shot / surprised lines, 7/9 happy celebrations and
+  boasts plus the winning `vs` lines, 8/10 laments only plus the losing `vs` lines (a laughing bogey is left out).
 - Nothing fills 6: golf has no partner calls.
 - Nothing fills 5 (hit by the ball, opentennis B560): every Fore! take is a word line (heckles, comments, versus);
-  the only short exclamations ("Oh!" in jy3/jy0 of Regis, Maya, Kamala) are the happy shot-reaction voices.
+  the only short exclamations ("Oh!" in jy3/jy0 of Regis, Maya, Kamala) are taken as their mis-hit / whiff lines.
 
 **Reactions**: all are from `pcNN_<name>_c00-03.glb`, with intro clips only (no loops).
 
