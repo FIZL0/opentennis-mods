@@ -114,7 +114,7 @@ Morph targets on the head/face mesh, names in `mesh.extras.targetNames`, **witho
 | `blink_eye` | recommended | blink (pc07 and pc13 have none) |
 
 Weights 0–1, full expression at 1. HST plays the faces from the **donor's** `.MOR` tracks (§6) bound by these
-names; extra targets (`smile_*`, `wink_eye`…) are kept but only play if the donor's tracks name them. A missing
+names, except on a mod clip with a face of its own (§6 *Faces*); extra targets (`smile_*`, `wink_eye`…) are kept but only play if the donor's tracks name them. A missing
 required channel freezes that part of the face; fill it with the closest expression. `rerig.py` does this by
 word (target name minus `_eye`/`_mouth`, side markers L/R, variant letters and digits), best first:
 blink←close/wink, joy←smile/laugh/grin, anger←angry/vexing/muka/scowl/frown/clench, sorrow←sad/cry/worry/pain,
@@ -222,6 +222,10 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   time the motion starts the game draws one of `NAME`, `NAME.1`, … in turn, picked from how often the player's motion
   has been set (no match RNG). Each take obeys `NAME`'s length rule. A take without its `NAME`, or a suffix that is
   not a whole number ≥ 1, fails the load (opentennis M130). `tools/rerig/takes.py` lists them per mod.
+  **Faces**: a clip (or take) may carry its own face: a `weights` channel on a node whose `extras.targetNames` names
+  each weight (the costume's morph targets, matched as the donor's tracks are, §4). That clip then plays this face,
+  keyed with its body on its own clock, instead of the donor's `.MOR` face; a clip without one keeps the donor's.
+  Weights within −2..2, one per name per key, or the load fails. motions.py copies the source clip's own face.
   `tools/rerig/motions.py` retargets a source game's motions (per-joint world rotation change from the shared bind pose; root
   from the pelvis, scaled by hip height; intro then loop played at 60 Hz: the whole intro, looped up to at least the donor's frames).
 - `costume_of` (optional, 0–13): the mod is a **costume pack for that disc character**, not a new character: the

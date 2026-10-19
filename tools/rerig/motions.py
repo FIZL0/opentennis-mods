@@ -11,6 +11,9 @@ donor clip's length at 60 Hz: the source plays at its own speed (60 Hz), the loo
 intro plays whole, past the donor's end (HST draws it on its own clock: mods.rs `own_motions`).
 A trailing `!` (`re_gu=ga_pc00_bi_r00!@40`) pins the root's horizontal position at rest: golf celebrations that walk
 off the spot stay where the player stands (only the height follows the pelvis).
+A source clip's face (`weights` channels on its morph meshes) goes along, frame for frame with the body, on a
+mesh-less `face` node whose `extras.targetNames` are the source's target names (the costume keeps them: rerig.py), so
+HST plays the clip's own face instead of the donor's.
 """
 import sys
 import os
@@ -108,6 +111,10 @@ def make(costume, src, out, clips):
     for n in cg["nodes"]:
         o.node(**{k: n[k] for k in ("name", "children", "translation", "rotation", "scale", "matrix") if k in n})
     o.g["scenes"] = [dict(cg["scenes"][cg.get("scene", 0)])]
+    # the source's face targets by name, over every morph mesh node (weights channels key them per node)
+    fnodes = [i for i, nd in enumerate(sg["nodes"]) if "mesh" in nd and sg["meshes"][nd["mesh"]].get("extras", {}).get("targetNames")]
+    fnames = list(dict.fromkeys(t for i in fnodes for t in sg["meshes"][sg["nodes"][i]["mesh"]]["extras"]["targetNames"]))
+    face_node = None
 
     for name, seq, frames, *rest in clips:
         pin = bool(rest and rest[0])
@@ -126,7 +133,19 @@ def make(costume, src, out, clips):
         rot = {j: [] for j in joints}
         mirrored = set()
         pos = []
+        chans = {a: sampler(sg, sb, anims[a]) for a in seq}
+        faced = any("weights" in chans[a].get(i, {}) for a in seq for i in fnodes)
+        face = []
         for a, t in plan:
+            if faced:
+                w = dict.fromkeys(fnames, 0.0)
+                for i in fnodes:
+                    tv = chans[a].get(i, {}).get("weights")
+                    if tv:
+                        names = sg["meshes"][sg["nodes"][i]["mesh"]]["extras"]["targetNames"]
+                        v = [np.interp(t, tv[0], tv[1][:, k]) for k in range(len(names))]
+                        w.update((n, max(w[n], x)) for n, x in zip(names, v))
+                face.append([w[n] for n in fnames])
             S = source_worlds(sg, sb, anims[a], t)
             Wa = {}
 
@@ -177,6 +196,11 @@ def make(costume, src, out, clips):
             ch.append({"sampler": len(sm) - 1, "target": {"node": j, "path": "rotation"}})
         sm.append({"input": ti, "output": o.accessor(np.array(pos, np.float32), glb.FLOAT, "VEC3"), "interpolation": "LINEAR"})
         ch.append({"sampler": len(sm) - 1, "target": {"node": root, "path": "translation"}})
+        if faced:
+            if face_node is None:
+                face_node = o.node(name="face", extras={"targetNames": fnames})
+            sm.append({"input": ti, "output": o.accessor(np.array(face, np.float32).ravel(), glb.FLOAT, "SCALAR"), "interpolation": "LINEAR"})
+            ch.append({"sampler": len(sm) - 1, "target": {"node": face_node, "path": "weights"}})
         o.add("animations", {"name": name, "channels": ch, "samplers": sm})
     o.write(out)
 
