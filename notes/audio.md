@@ -86,6 +86,12 @@ ship and sorts it by keyword into `0-1-3_shout`, `2-4_mishit_whiff`, `7-9_won_po
 `index.tsv`. Sources: the English banks the mods draw from, plus OOB's prize (`ga_pz_pcNN`) and profile (`me_pro_pcNN`) banks; wordless grunts (< 1 s, kana interjections only, not はい/いや/..) from the Japanese copies (OOB `ga_pc_NN.xb`, pc00-14; Open Tee 2 `.xb`) go in `grunts_from_japanese/`. Samples in more than one character's banks are left out (OOB `ga_ya` 012-017 are shared effects; Open Tee 2's `lastchk/dataNN` select-screen banks are identical for all). Keyword buckets are rough (whisper mishears grunts; "Not bad" lands in lost); pick by ear. Used so far: Open Tee 2
 pc00-09 won/lost (`opentee_data.py` WON/LOST). Thin spots it can fill: Open Tee 2 pc10-20 (no 7-10), pc03 Shu (no shouts),
 pc06 Patricia (1 shout), every golf mod's 2/4 except OOB/Fore, Fore's single-take 8/10.
+`tools/rerig/more_voices.py` (called from `package.py golf`) then tops every golf mod's programs up from these
+transcripts by rule: a line is added only when its whole transcript is one of the program's phrases (`RULES`) and short
+enough, never when it names golf, says "you", names someone or (bar 2/4) asks a question; English banks only, never a
+sample another character also has, OOB's ga_ya taunts left out. Get a Grip mods add the second take set (`sgv_pcNNb`),
+`rep_get/rep_lost` and the honours bank (`hnr`: good/bad point, winA/B, loseA) to 7-10 (`package.py` GAG_VOICE).
+HST draws only the first 2-3 keys of 7-10 today; the rest wait for a player that cycles through every take.
 
 ## Unresolved
 - Character names for all games. - Fore event -> sample mapping (and any EE-side pitch scale on a play call; voices assumed 1.0). - OOB / Open Tee cue name -> wave mapping not decoded.

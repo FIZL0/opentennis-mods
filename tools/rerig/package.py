@@ -13,6 +13,7 @@ costumes wear a glove on the left hand is left-handed (glove hand = racket hand,
 costumes pre-mirrored (mirror.py) instead of linked; the rest stay right-handed, left for a human to confirm.
 """
 import glob
+import hashlib
 import json
 import os
 import re
@@ -32,6 +33,7 @@ import gag_stats as gagmap  # noqa: E402
 import motions  # noqa: E402
 import mirror  # noqa: E402
 import takes  # noqa: E402
+import more_voices  # noqa: E402
 
 GAME_NAME = {"fore": "Hot Shots Golf Fore! (PS2)", "oob": "Hot Shots Golf: Out of Bounds (PS3)",
              "getagrip": "Hot Shots Tennis: Get a Grip (PSP)",
@@ -44,7 +46,11 @@ HST_ANI = gagmap.hst_xb(ROOT) + "/PCANI"
 # re_di_set). approx: 1 and 2 (st_ji/st_nb meaning unknown). body = hit by the ball ('Ow!', 'Ouch!', "Nah, I'm hit!").
 GAG_VOICE = {0: ["smash"], 1: ["st_ji"], 2: ["st_nb"], 3: ["receive"], 4: ["swing"], 5: ["body"],
              6: ["start", "call", "go", "chance"],
-             7: ["point_get"], 8: ["point_lost"], 9: ["set_get"], 10: ["set_lost"]}
+             7: ["point_get", "rep_get", "hnr:good"], 8: ["point_lost", "rep_lost", "hnr:bad"],
+             9: ["set_get", "hnr:winA", "hnr:winB"], 10: ["set_lost", "hnr:loseA"]}
+# 7-10 take the second take set's cues too (sgv_PCNNb: the same cues, other recordings), after the first set's, and the
+# honours bank's (hnr_PCNN: good/bad and the trophy win/lose lines); a recording two cues share is used once
+GAG_BANKS = {7: "ab", 8: "ab", 9: "ab", 10: "ab"}
 
 
 def link(src, dst):
@@ -61,9 +67,20 @@ def gag_voices(n, dst):
     d = os.path.join(ROOT, f"out/voices/getagrip/pc{n:02d}")
     out = {}
     for prog, cues in GAG_VOICE.items():
-        files = []
-        for cue in cues:
-            files += sorted(glob.glob(os.path.join(d, f"sgv_pc{n:02d}a_pc_voice_{cue}*.wav")))
+        files, seen = [], set()
+        for bank in GAG_BANKS.get(prog, "a"):
+            for cue in cues:
+                if cue.startswith("hnr:"):
+                    if bank != "a":
+                        continue
+                    pat = f"hnr_pc{n:02d}_pc_voice_{cue[4:]}*.wav"
+                else:
+                    pat = f"sgv_pc{n:02d}{bank}_pc_voice_{cue}*.wav"
+                for f in sorted(glob.glob(os.path.join(d, pat))):
+                    h = hashlib.md5(open(f, "rb").read()).hexdigest()
+                    if h not in seen:
+                        seen.add(h)
+                        files.append(f)
         files = files[:KEYS.get(prog, 5)]
         for k, f in enumerate(files):
             link(f, os.path.join(dst, f"voice/{prog}_{k}.wav"))
@@ -71,8 +88,9 @@ def gag_voices(n, dst):
     return out
 
 
-# HST voice program -> keys it plays (standard §5); reactions 7-10 take any number, capped like Get a Grip's at 5
-KEYS = {0: 3, 1: 5, 2: 3, 3: 3, 4: 2, 5: 1, 6: 5, 7: 5, 8: 5, 9: 5, 10: 5}
+# HST voice program -> keys it plays (standard §5); reactions 7-10 take any number (HST's own draw reaches keys 0-2,
+# 0-4, 0-1, 0-1; a mod's further takes are there for a player that cycles through all of them), capped at 8
+KEYS = {0: 3, 1: 5, 2: 3, 3: 3, 4: 2, 5: 1, 6: 5, 7: 8, 8: 8, 9: 8, 10: 8}
 # Rackets (M1r). No source game has a per-character racket (Get a Grip's Racket_param has no character column,
 # notes/getagrip.md; the golf games have none), so each mod of a game gets a different one of the 24 there are:
 # Get a Grip's 10 models (parts/racket: racket000-008 = items Racket_0N0-0N2, which share a model each, and
@@ -215,7 +233,7 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
         ch = json.load(open(sz))["characters"].get(f"pc{n:02d}")
         if ch:
             manifest["size_why"] = f"{ch['why']}; head × {ch['head_factor']:.4f} about the neck ({ch['head_why']})"
-    prog, vwhy = D["voices"](n)
+    prog, vwhy = more_voices.fill(game, n, *D["voices"](n))
     manifest["voice"] = "voice/"
     manifest["voice_counts"] = {str(k): v for k, v in voices(prog, mod).items()}
     manifest["voice_why"] = {str(k): v for k, v in vwhy.items()}

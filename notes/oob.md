@@ -336,12 +336,15 @@ There is no golf data for speed, stamina, agility or reach.
   - The group count is at +0xc. Some banks give a larger count with zero table offsets, so skip those.
   - Each group table is `[?, count, offsets…]`. Bit 31 of an offset is a flag.
   - A note is `d0|d2, n, n BCD digits` = program·128 + key. The RGND region with that key gives the wave (`wave+1` = vgmstream's `NNN.wav`, checked against the WAVE sample counts).
-- The pitch shift is key + 12 − root − fine/128. Measured per chosen file:
-  - pc00 and pc07: 0.
-  - pc15 and pc16: +0.53 semitones.
-  - All other banks: +5.55 semitones (root key+6, fine 0x3a). These are probably 32 kHz recordings labelled 44.1 kHz, so the exported wavs play about 27% slow and low.
-  - pc00's multi-part cues also reuse one fragment at +6 and +8.
-  - This is the root-note pitch issue `tools/audio.py` is fixing; oob_data only reports it.
+  - Between notes, `f1 02 hh ll` is a wait of BCD hhll (likely ms); `c0 …` lines set controllers, `d2` releases the
+    note, `ff` ends. Multi-part cues (the hole results) are note, wait, note…: the delays live in the voice cue, and
+    nothing in the bank names the motion they go with (that is in the encrypted program; the profile page's
+    pairings above are the only data link).
+- The pitch shift is key − root + fine/128 semitones; the true rate is the WAVE rate (always labelled 44100) × 2^(shift/12)
+  (`tools/audio.py` `sgxd_rates`, which writes it into each exported wav's header):
+  - English `.xb0` banks: −10.53 semitones for all 17 characters = 24000 Hz.
+  - Japanese `.xb` banks: −5.55 semitones = 32000 Hz.
+  - pc00's multi-part cues also reuse one fragment at other keys (+6, +8): the same wave played higher.
 - `ga_sg_pcNN` has the same 58 slots (group 0: 42; group 1: 16 second takes) for everyone. The cue names are each actor's script lines (pc01 04A–38E, Felipe 20A–61; pc00's are partly out of order), so **the slot is the event**.
 - The profile voice bank `me_pro_pcNN` uses one numbering for all 17 characters. Its groups match the profile "Play Animation" page:
   - Victory Pose = sg (0,29) (0,30) (0,31) (0,33).

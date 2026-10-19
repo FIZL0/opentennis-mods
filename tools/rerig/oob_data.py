@@ -117,7 +117,7 @@ def heights():
 def sgxd(path):
     """{(group, index): (cue name, [(wave, semitones)])}, plus each wave's sample count. A SEQD note is
     `d0|d2, n, n BCD digits` = program*128 + key; the RGND region with that key gives the wave and its root note
-    (shift = key + 12 - root - fine/128: 0 = played as stored, which the exported wav is)."""
+    (shift = key - root + fine/128 semitones; tools/audio.py writes the shifted rate into the exported wav)."""
     d = open(path, "rb").read()
     u = lambda o: struct.unpack_from("<I", d, o)[0]
     ch, o = {}, 0x10
@@ -149,7 +149,7 @@ def sgxd(path):
                     rg = next((x for x in (progs[p] if p < len(progs) else [])
                                if (x[6] & 0xff) <= key <= (x[6] >> 8 & 0xff)), None)
                     if rg:
-                        notes.append((rg[13], key + 12 - (rg[7] & 0xff) - (rg[7] >> 8 & 0xff) / 128))
+                        notes.append((rg[13], key - (rg[7] & 0xff) + (rg[7] >> 8 & 0xff) / 128))
                     k += 2 + n
                 else:
                     k += 1
@@ -215,7 +215,6 @@ def voices(pc):
     plays 2-17 fragments in sequence; the wav is the main one)."""
     path, wd = _bank(pc, "sg")
     cues, samples = sgxd(path)
-    shifted = []
 
     def files(slots):
         out = []
@@ -225,12 +224,10 @@ def voices(pc):
             name, notes = cues.get(sl, ("", []))
             if not notes or "dummy" in name:
                 continue
-            w, sh = max(notes, key=lambda n: samples[n[0]])
+            w, _ = max(notes, key=lambda n: samples[n[0]])
             f = os.path.join(wd, f"{w + 1:03d}.wav")
             if os.path.exists(f) and f not in out:  # some banks reuse one wave for two slots
                 out.append(f)
-                if abs(sh) > 0.01:
-                    shifted.append((os.path.basename(f), round(sh, 2)))
         return out
 
     prog = {0: files(SHOUT), 1: files(STROKE), 2: files(MISHIT), 3: files(SHOUT), 4: files(WHIFF),
