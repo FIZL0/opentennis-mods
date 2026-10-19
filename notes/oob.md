@@ -377,13 +377,9 @@ For each cue the longest note's wave is used, because celebrations play 2–17 f
 | re_di_set | `ga_pcNN_bo_r00` (bogey) | 90–95 |
 
 - The alternatives are `rslt_win` (120 frames) and `rslt_loss` (90). `re_*_p/wi` are shot reactions with mixed faces.
-- **Takes** (`tools/rerig/takes.py`, standard §6 `NAME.K`): extra clips drawn in turn with the pick above.
-  Sophie (pc02): re_gu +`ku02_gl`/`ha`/`cl`/`sh`; re_di +`ku02_an`/`su`; re_gu_set +`ga_pc02_bi_r01`, `ga_pc02_ea_r00`,
-  `ga_pc02_pa_r00`, `rslt_win`/`vict`/`get_pc02`; re_di_set +`rslt_loss_pc02`, `rslt_loss_pc02_2`. Left out: `re_*_p/wi`
-  (start turned 19–81° toward the ball), `ku02_aw` (no face channel), `st_/ad_/sw_/ta_` (golf stance, address and swings),
-  `chr_pc02_lp` (select-screen loop: mods have no select pose), `rslt_clap`/`rslt_wait` (idles), `ka_*` (club, green),
-  `avatar_*` (chibi rig).
-- The pelvis carries root motion: 0.07–0.56 units of horizontal travel. package.py pins it.
+- **Takes** (`tools/rerig/takes.py`, standard §6 `NAME.K`): more of the character's own clips drawn in turn with the
+  pick above, chosen at build time from the extracted clips: the emote, hole-result and results-screen families,
+  kept when their face channels match the reaction's mood and they start facing the camera.
 
 ## Size (tools/rerig/sizing.py, standard §2)
 profile2 height (ft/in → cm) × HST's metres per cm by sex, × game factor 1.0123 that gives pc16 Gloria (5'4") HST's
