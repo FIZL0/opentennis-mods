@@ -30,6 +30,7 @@ import sizing  # noqa: E402
 import gag_stats as gagmap  # noqa: E402
 import motions  # noqa: E402
 import mirror  # noqa: E402
+import takes  # noqa: E402
 
 GAME_NAME = {"fore": "Hot Shots Golf Fore! (PS2)", "oob": "Hot Shots Golf: Out of Bounds (PS3)",
              "getagrip": "Hot Shots Tennis: Get a Grip (PSP)",
@@ -199,6 +200,11 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
             seq = [x for x in seq if x != "!"]
             ani = os.path.join(HST_ANI, f"PC{donor['index']:02d}ANI.XB/data/taguchi/MtPc{donor['index']:02d}/{hst_name.replace('re_', f're_pc{donor['index']:02d}_')}.ANI2")
             plan.append((hst_name, seq, motions.ani_frames(ani) if os.path.exists(ani) else None, PIN.get(game, False) or pin))
+            # the reaction's further takes (takes.py; the game draws one in turn as it starts), timed as the reaction
+            base = plan[-1]
+            for k, extra in enumerate(takes.takes(game, n).get(hst_name, []), 1):
+                whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name} (takes.py)"
+                plan.append((f"{hst_name}.{k}", [extra], base[2], base[3]))
         motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan)
         manifest["motions"] = "motions.glb"
         manifest["motions_why"] = {k: f"{whys.get(k, '')}; {' then '.join(seq)}{', root held on its spot' if pin else ''}, played at 60 Hz, its own length and at least the donor's clip ({fr} frames)"

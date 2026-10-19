@@ -218,6 +218,10 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   arm table, serve toss, body hits, root paths, cut-away cameras) keeps reading the donor's clip, and a match
   plays out exactly as without it. Unkeyed joints hold their rest; the left-hand mirror applies as to the donor's.
   One file serves every costume: a key on a joint a costume lacks is skipped for that costume.
+  **Takes**: `NAME.1`, `NAME.2`, … (beside `NAME` itself) are further takes of a motion, also on screen only; each
+  time the motion starts the game draws one of `NAME`, `NAME.1`, … in turn, picked from how often the player's motion
+  has been set (no match RNG). Each take obeys `NAME`'s length rule. A take without its `NAME`, or a suffix that is
+  not a whole number ≥ 1, fails the load (opentennis M130). `tools/rerig/takes.py` lists them per mod.
   `tools/rerig/motions.py` retargets a source game's motions (per-joint world rotation change from the shared bind pose; root
   from the pelvis, scaled by hip height; intro then loop played at 60 Hz: the whole intro, looped up to at least the donor's frames).
 - `costume_of` (optional, 0–13): the mod is a **costume pack for that disc character**, not a new character: the
