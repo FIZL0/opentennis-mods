@@ -106,8 +106,10 @@ PEOPLE = re.compile(r"_gi\d\d_(shin|seito|Fisherman|Clown|ClownCannon|driver|Wal
                     r"ninja|spaceman|mastermonk|tunaman)$|^c09_ob1[56]_umpire0[12]$|_ob\d\d_camera01$|_gall", re.I)
 # pieces standing where HST's players run (its mover goes to 8.7 m beside the centre line and 17.9 m behind the net)
 # that they'd run straight through, left out like the people: c20's toolboxes behind the baselines (`gi04_Tools`) and
-# beside the court (`ob13_kougu`)
-RUN_THROUGH = re.compile(r"^c20_(gi\d\d_Tools|ob13_kougu\d\d)$")
+# beside the court (`ob13_kougu`; the one in front of the helicopter stays)
+RUN_THROUGH = re.compile(r"^c20_(gi\d\d_Tools|ob13_kougu01__02(__\w+)?)$")
+# pieces moved sideways (metres along HST's x) just out of the players' reach instead: c02's green net walls
+PUSH = {"c02_ob14_netgreen01__00": -2.6, "c02_ob14_netgreen01__01": 1.4}
 
 # HST's match camera (opentennis hst_sim::camera::base): 41 m from the court centre at 17 degrees, behind
 # either baseline (it turns round when its human is on the far half), 20-degree lens on the PS2's 0.7 aspect ->
@@ -838,13 +840,14 @@ def export(n, label):
         if ":" in tr.name or "locator" in tr.name:
             continue  # a Maya reference duplicate of the next track / where the benched players stand
         model = tr.name.split("__", 1)[0]  # `<model>__<NN>`, `<model>__<NN>__singles`, `<model>__doubles`
-        if PEOPLE.search(model) or RUN_THROUGH.search(model):
+        if PEOPLE.search(model) or RUN_THROUGH.search(model) or RUN_THROUGH.search(tr.name):
             continue  # a person, the gallery (M112), a piece the players would run through
         path = object_model(dirs, n, model)
         if path is None:
             skipped.append(tr.name)
             continue
         pos, rot, scl = i3m.evaluate(tr, 0.0)
+        pos = np.add(pos, (-100 * PUSH.get(tr.name, 0), 0, 0))  # gag_cm units (cm), x flipped by game_space
         mots = sorted(glob(os.path.join(os.path.dirname(path), "*.i3m")))
         # only the dome and the clouds follow the eye; distant scenery (c02's and c14's `bg02_Enkei`, 75-200 m out, with its own
         # ground) stays put, as seen from the HST match camera 41 m off the centre
