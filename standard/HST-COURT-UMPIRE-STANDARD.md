@@ -88,7 +88,7 @@ mods/<id>/
   it stands between the eye and the court: a line from the eye (any camera: match, cut-away, replay) to a point of
   the playing area (the doubles court and 2 m behind each baseline, on the ground and 2 m up) passes through its box
   at rest, or the eye is inside it. Its skinned meshes go with it when all their joints are under it. For set pieces
-  that another game's closer camera had behind its back (Get a Grip's basket goals behind each baseline). Applies to
+  that another game's closer camera had behind its back (Get a Grip's basket goals behind each baseline). A piece whose top is under 1.5 m is always drawn. Applies to
   `court.glb` and `gimmick.glb`.
 - `gimmick.glb`'s animations each drive one set piece and loop on their own clocks, all playing at once; a set piece
   with none stands still. They are drawn only, like `court.glb`: no collision, the ball passes through.
