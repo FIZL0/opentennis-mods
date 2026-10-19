@@ -26,6 +26,7 @@ sys.path.insert(0, HERE)
 import glb  # noqa: E402
 from rerig import binds  # noqa: E402
 import racket  # noqa: E402
+import face_alias  # noqa: E402
 import sizing  # noqa: E402
 import gag_stats as gagmap  # noqa: E402
 import motions  # noqa: E402
@@ -280,6 +281,8 @@ def main():
                     mirror.mirror(c, os.path.join(mod, "model", os.path.basename(c)))
                 else:
                     link(c, os.path.join(mod, "model", os.path.basename(c)))
+                # the face stand-ins (FACE_PICKS & co.) a model lacks; out/rerig may predate them (opentennis M131)
+                face_alias.add_aliases(os.path.join(mod, "model", os.path.basename(c)))
             g, b = glb.read(costumes[0])
             h = -binds(g, b)[0]["Bip01"][1, 3]
             pool, why = hst, "nearest Bip01 height"

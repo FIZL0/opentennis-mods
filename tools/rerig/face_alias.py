@@ -2,7 +2,7 @@
 
 python3 tools/rerig/face_alias.py MOD_DIR…     (every model/*.glb of each mod)
 
-For mods already packaged when a stand-in was added to those tables (or FACE_PICKS): the same aliases a fresh rerig would append
+package.py runs it on every costume it packages. By hand: for mods already packaged when a stand-in was added to those tables (or FACE_PICKS): the same aliases a fresh rerig would append
 (each a copy, or the sum, of the model's own targets), without rerigging, mirroring or repackaging. Channels the model
 already has are left alone. Bump the mod's mod.json `version` before uploading it again.
 """
@@ -63,7 +63,8 @@ def add_aliases(path):
         out = bytearray(b"glTF" + struct.pack("<II", 2, 12 + 8 + len(js) + 8 + len(b)))
         out += struct.pack("<I", len(js)) + b"JSON" + js
         out += struct.pack("<I", len(b)) + b"BIN\0" + b
-        open(path, "wb").write(out)
+        open(path + ".tmp", "wb").write(out)
+        os.replace(path + ".tmp", path)  # a new file: a hard link package.py made into out/rerig stays as it was
     return added
 
 
