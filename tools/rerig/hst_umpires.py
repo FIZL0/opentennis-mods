@@ -1,4 +1,4 @@
-"""HST's five chair umpires as playable mods (opentennis task M1g) -> out/mods/hst_umpire_NN_<name>/.
+"""HST's chair umpires (all but Robot Tennis) as playable mods (opentennis task M1g) -> out/mods/hst_umpire_NN_<name>/.
 
 python3 tools/rerig/hst_umpires.py [opentennis dir]      (default ../opentennis)
 
@@ -37,7 +37,7 @@ UMPIRES = {
     0: ("chika", "Chika", "f", None, ""),
     1: ("suzuki", "Suzuki", "m", 13, "the same Suzuki as HST's playable pc13 (same name, old man in both)"),
     2: ("lily", "Lily", "f", None, ""),
-    3: ("robottennis", "RobotTennis", None, None, "a robot: no sex, nearest Bip01 height over all of HST's 14"),
+    # 3 Robot Tennis: no longer built as a player (user 2026-10-19; opentennis drops it, mods::DROPPED)
     4: ("anna", "Anna", "f", None, ""),
 }
 # player voice program <- the umpire bank's (program, key) of the same meaning (bank: SND/UMP/UVnnA.XB0;
