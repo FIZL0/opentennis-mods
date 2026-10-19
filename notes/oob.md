@@ -168,7 +168,7 @@ per node: str name;
           u32 (1 or 3); then 64 bytes (u32 1,1,1, zeros) — except after the last node
 ```
 
-Times are signed 3ds Max ticks, taken as 4800/s (keys every 80 ticks = 60 fps; some clips start at −400 ticks:
+Times are signed ticks, 2400/s (keys every 80 ticks = 30 fps; some clips start at −400 ticks:
 shifted to 0 in glTF). Values are the node's local TRS in the row-vector convention, so the glTF (column-vector)
 rotation is the **conjugate** (−x, −y, −z, w). Biped translation tracks equal the bind pose except
 `Bip01Pelvis` (carries the root motion/placement, e.g. stance offset from the ball); translation tracks of dynamic
@@ -179,8 +179,8 @@ the pelvis only. Linear interpolation (keys are dense).
 
 `.mor` (morph-weight anim): `u32 0x28; u32 nTracks; per track: str target ("blink_eye"); u32 n; i32 time[n];
 f32 weight[n]`. `.uva` (UV-offset anim): `u32 0x28; u32 n; per track: str texobj name ("eye__ID"); u32 n;
-i32 time[n]; (f32 du, f32 dv)[n]`. Times are ticks (4800/s) like `.mot`. They sit next to the `.mot` of the same
-name (`ga_pc00_bi_r00.{mot,mor}`); a few have no `.mot` (`bs_pcNN_eye_00.mor` = a 0.1 s blink, 0→1→0, played on
+i32 time[n]; (f32 du, f32 dv)[n]`. Times are ticks (2400/s) like `.mot`. They sit next to the `.mot` of the same
+name (`ga_pc00_bi_r00.{mot,mor}`); a few have no `.mot` (`bs_pcNN_eye_00.mor` = a 0.2 s blink, 0→1→0, played on
 its own). Every `.mor` track name exists in that character's target list except pc07 `sad_mouth3`, pc15 `close`
 (ignored). Eye `.uva`s (`eye__ID` offsets of 0.1 in u) swap the eye texture cell, and are what makes e.g.
 `laugh_eye` read as closed/happy — the geometry of some `*_eye` targets is subtle on its own.
@@ -299,7 +299,9 @@ inserted ForearmRoll change the local frames; drop or merge the Nub/Roll bones, 
   10, 11 unused. Collision primitives are parsed, not exported (hair can pass through the body). The cloth meshes
   between mesh blocks (`skirt`, `uwagi`, `hane1`, `h_mimi`) are not decoded: skirts and jackets stay rigid.
 - LOD/`_l` variants, clubs (`ueno/club`), caddies (`kikkawa/caddie`), avatars' bodies.
-- Tick rate 4800/s is the 3ds Max default and gives plausible durations, but is not confirmed from the executable.
+- Tick rate 2400/s is not confirmed from the executable. 4800/s (the 3ds Max default) was used first and played
+  everything twice too fast: the results jump was airborne ~0.2 s for a ~0.4 m rise (gravity needs ~0.55 s), and
+  claps ran at 10/s against ~5/s in gameplay footage.
 - `ad_*`/`st_*` pelvis translation includes the in-game placement offset relative to the ball (e.g. x −0.58,
   z −0.65); strip root motion when using them as idles.
 

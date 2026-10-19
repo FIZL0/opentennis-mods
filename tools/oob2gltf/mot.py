@@ -3,14 +3,14 @@
 u32 version (0x28), u32 node count, then 0x40 bytes (u32 1,1,1, zeros); per node:
   pstr name; 3 tracks: rotation (u32 n, u32 time[n], f32x4 quat[n]), translation (n, times, f32x4 [w unused]),
   scale (n, times, f32x3); then u32 (1 or 3); then 0x40 bytes (u32 1,1,1, zeros) except after the last node.
-Times are signed 3ds Max ticks (4800/s; some clips start at negative times, e.g. -400). Quaternions are (x, y, z, w) of the row-vector local matrix (v' = v·M), i.e. the
+Times are signed ticks, 2400/s (keys every 80 ticks = 30 fps; some clips start at negative times, e.g. -400). Quaternions are (x, y, z, w) of the row-vector local matrix (v' = v·M), i.e. the
 glTF (column-vector) rotation is the conjugate.
 """
 import struct
 
 import numpy as np
 
-TICKS_PER_SECOND = 4800.0
+TICKS_PER_SECOND = 2400.0  # 4800 (the 3ds Max default) plays every clip twice too fast: jumps hang 0.2 s, claps 10/s
 
 
 def parse_mot(d: bytes):
