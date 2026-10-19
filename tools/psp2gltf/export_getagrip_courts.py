@@ -104,6 +104,10 @@ CAR = {11: "gi10_Car", 31: "gi11_Car"}
 # vehicles and the umpire's chair stay.
 PEOPLE = re.compile(r"_gi\d\d_(shin|seito|Fisherman|Clown|ClownCannon|driver|Walkman|radioboy|Karl|BaseBallMan|cheer|dote|"
                     r"ninja|spaceman|mastermonk|tunaman)$|^c09_ob1[56]_umpire0[12]$|_ob\d\d_camera01$|_gall", re.I)
+# pieces standing where HST's players run (its mover goes to 8.7 m beside the centre line and 17.9 m behind the net)
+# that they'd run straight through, left out like the people: c20's toolboxes behind the baselines (`gi04_Tools`) and
+# beside the court (`ob13_kougu`)
+RUN_THROUGH = re.compile(r"^c20_(gi\d\d_Tools|ob13_kougu\d\d)$")
 
 # HST's match camera (opentennis hst_sim::camera::base): 41 m from the court centre at 17 degrees, behind
 # either baseline (it turns round when its human is on the far half), 20-degree lens on the PS2's 0.7 aspect ->
@@ -625,7 +629,7 @@ def gimmicks(dirs, n, sc, todo, by_haichi):
     folders = {}
     for d in dirs:
         for g in glob(os.path.join(d, "gimmick", "gi*")):
-            if not PEOPLE.search(f"c{n:02d}_" + os.path.basename(g)):  # people: left out (M112)
+            if not (PEOPLE.search(name := f"c{n:02d}_" + os.path.basename(g)) or RUN_THROUGH.search(name)):  # people (M112)
                 folders.setdefault(os.path.basename(g), g)
     setting = next((os.path.join(d, "setting") for d in dirs if glob(os.path.join(d, "setting", "*_route.dat"))), None)
     if not setting:
@@ -643,8 +647,9 @@ def gimmicks(dirs, n, sc, todo, by_haichi):
             folder = CAR[gid]
         else:
             folder = next((f for f in folders if f.split("_", 1)[1] == GIMMICK[jp]), None)
-        if folder is None and GIMMICK.get(jp) and PEOPLE.search(f"_gi00_{GIMMICK[jp]}"):
-            continue  # a person (M112)
+        if folder is None and GIMMICK.get(jp) and (PEOPLE.search(f"_gi00_{GIMMICK[jp]}")
+                                                   or RUN_THROUGH.search(f"c{n:02d}_gi00_{GIMMICK[jp]}")):
+            continue  # a person (M112), a piece the players would run through
         if folder is None or route not in rt:
             todo.append(f"gimmick {jp} (id {gid}, route {route}): no model or route found, not placed")
             continue
@@ -833,8 +838,8 @@ def export(n, label):
         if ":" in tr.name or "locator" in tr.name:
             continue  # a Maya reference duplicate of the next track / where the benched players stand
         model = tr.name.split("__", 1)[0]  # `<model>__<NN>`, `<model>__<NN>__singles`, `<model>__doubles`
-        if PEOPLE.search(model):
-            continue  # a person, the gallery (M112)
+        if PEOPLE.search(model) or RUN_THROUGH.search(model):
+            continue  # a person, the gallery (M112), a piece the players would run through
         path = object_model(dirs, n, model)
         if path is None:
             skipped.append(tr.name)
@@ -902,6 +907,9 @@ def export(n, label):
     if placed:
         man["gimmicks"] = placed
     man["todo"] = todo
+    old = os.path.join(mod, "mod.json")
+    if os.path.exists(old) and "version" in (prev := json.load(open(old))):
+        man["version"] = prev["version"]  # bumped by hand before an upload (opentennis AGENT.md)
     json.dump(man, open(os.path.join(mod, "mod.json"), "w"), indent=1, ensure_ascii=False)
     Model.cache.clear()
     return slug, ro, sideline, baseline, layout
