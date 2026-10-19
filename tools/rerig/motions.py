@@ -90,10 +90,11 @@ def length(g, b, anim):
 
 # body capsules (joint chain, radius m; "^" is the head's top) and points along the racket (Racket-joint +Y, butt to
 # tip 0.944 m: standard §1) for `racket_inside`
-BODY = [(("Bip01Pelvis", "Bip01Spine", "Bip01Spine1", "Bip01Spine2", "Bip01Neck", "Bip01Head", "^"), 0.13),
+BODY = [(("Bip01Pelvis", "Bip01Spine", "Bip01Spine1", "Bip01Spine2", "Bip01Neck"), 0.13),
         (("Bip01LThigh", "Bip01RThigh"), 0.12),
         (("Bip01LThigh", "Bip01LCalf"), 0.08), (("Bip01RThigh", "Bip01RCalf"), 0.08)]
-RACKET = np.linspace(0.12, 0.92, 9)
+HEAD = (("Bip01Head", "^"), 0.17)  # with the hair: one point in it is enough (a racket across the head crosses it fast)
+RACKET = np.linspace(0.12, 0.92, 17)
 HIDE_FRAMES = 0.12  # share of a clip's frames with the racket through the body that hides it for the whole clip
 
 
@@ -104,18 +105,18 @@ def seg_dist(p, a, b):
 
 
 def racket_inside(world, named):
-    """Whether two or more points along the racket are inside the body this frame (a held racket goes through the
-    head, torso or hips in moves made without one: claps, hugs, hands on hips or face)."""
+    """Whether a point along the racket is inside the head (with its hair), or three (~15 cm) inside the body, this
+    frame (a held racket goes through them in moves made without one: claps, hugs, hands on hips or hair)."""
     r = named.get("Racket")
     if r is None or "Bip01Head" not in named:
         return False
     head = world(named["Bip01Head"])
-    top = head[:3, 3] + 0.15 * np.array([0.0, 1.0, 0.0])  # ponytail: straight up, not along the head's own axis
+    top = head[:3, 3] + 0.2 * np.array([0.0, 1.0, 0.0])  # ponytail: straight up, not along the head's own axis
     at = lambda n: top if n == "^" else world(named[n])[:3, 3]
     pts = [(world(r) @ np.array([0.0, y, 0.0, 1.0]))[:3] for y in RACKET]
-    caps = [([at(n) for n in chain if n == "^" or n in named], rad) for chain, rad in BODY]
-    inside = sum(any(seg_dist(p, c[i], c[i + 1]) < rad for c, rad in caps for i in range(len(c) - 1)) for p in pts)
-    return inside >= 2
+    inside = lambda caps: sum(any(seg_dist(p, c[i], c[i + 1]) < rad for c, rad in caps for i in range(len(c) - 1)) for p in pts)
+    body = [([at(n) for n in chain if n in named], rad) for chain, rad in BODY]
+    return inside(body) >= 3 or inside([([at(n) for n in HEAD[0]], HEAD[1])]) >= 1
 
 
 def make(costume, src, out, clips):
