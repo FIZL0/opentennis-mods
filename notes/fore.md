@@ -136,7 +136,8 @@ bodies it comes from the roster.
   - `co` (13): comments on a shot, mostly one's own; `ya` (12): heckles / praise for the opponent's; `sc` (24): one line per
     opponent; `vs` (8): versus-result lines, roughly 00-03 a win and 04-07 a loss (Mike: eight takes of `vs00`).
 - `fore_data.py PICKS` sorts them per character by what they say: 0/1/3 only short exclamations (no sentences, no
-  bad-shot lines: they play on most strokes), 2/4 short bad-shot / surprised lines, 7/9 happy celebrations and
+  bad-shot lines: they play on most strokes), 2/4 short bad-shot / surprised lines (4, the whiff, plays on every
+  first miss: a groan where the only bad-shot line is a sentence, e.g. T-Bone's jy2, opentennis B575), 7/9 happy celebrations and
   boasts plus the winning `vs` lines, 8/10 laments only plus the losing `vs` lines (a laughing bogey is left out).
 - Nothing fills 6: golf has no partner calls.
 - Nothing fills 5 (hit by the ball, opentennis B560): every Fore! take is a word line (heckles, comments, versus);
