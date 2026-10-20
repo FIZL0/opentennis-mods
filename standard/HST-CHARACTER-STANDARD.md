@@ -129,7 +129,7 @@ These games swap one whole-face texture (eyes + mouth together) instead of morph
 `{"materials": ["<glTF material>", …], "neutral": "<png>", "channels": {"joy_eye": "<png>", "joy_mouth": "<same png>",
 …}}`. `materials` names the costume's face materials (Get a Grip: `<stem>_face0`; its mirrored halves `face`/`faceL`
 are one material in the glTF). Each channel with a png is a weight driven by the donor's `.MOR` track of that name;
-the loader shows the texture of the strongest channel above 0.5 (on a tie the first by channel name), else neutral. A `null`
+the loader shows the texture of the strongest channel at 0.5 or more (on a tie the first by channel name), else neutral. A `null`
 channel stays neutral; other keys are ignored. The game's own per-motion swaps are in `out/anims/getagrip/face_tracks.json` if a mod
 wants them exactly.
 
