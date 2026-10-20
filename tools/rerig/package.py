@@ -29,6 +29,7 @@ from rerig import binds  # noqa: E402
 import racket  # noqa: E402
 import colour  # noqa: E402
 import edge_clamp  # noqa: E402
+import claps  # noqa: E402
 import face_alias  # noqa: E402
 import sizing  # noqa: E402
 import gag_stats as gagmap  # noqa: E402
@@ -262,6 +263,7 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
     manifest["voice"] = "voice/"
     manifest["voice_counts"] = {str(k): v for k, v in voices(prog, mod).items()}
     manifest["voice_why"] = {str(k): v for k, v in vwhy.items()}
+    claps.apply(mod, game, manifest)  # clap takes stow the racket and clap (standard §6 Claps)
     st, params = cast(game, D, tp)
     manifest["source_stats"] = st.get(n, {})
     if n in params and params[n][0]:

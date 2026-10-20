@@ -163,6 +163,7 @@ HST plays per-character voice **programs** (each a set of keys = alternative tak
 | 5 | hit by the ball | 0 |
 | 6 | partner / first-serve calls | 0–4 |
 | 7–10 | post-point reactions (by reaction motion 0x2c–0x2f) | any |
+| 11 | clap: plays as a clap clip (§6 Claps) starts | 0 |
 
 (From `opentennis/research/journal/2026-10-07-n3-audio/9-SHOUTS-FINAL.md`, `10-WHIFF-CALLS-FINAL.md`.)
 A program you ship no wav for stays silent: a mod never plays its donor's voice.
@@ -233,6 +234,9 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   made without one where a held racket would go through the body. motions.py sets it when, for over 12 % of the clip's frames,
   one point along the racket sits in the head (with the hair, up to 0.2 m above it) or three sit in the body
   (spine, hips, thighs capsules).
+  **Claps**: `extras: {"racket": false, "clap": true}` marks a clap: the racket is hidden while it plays, and
+  voice program 11 (§5) plays as it starts. `tools/rerig/claps.py` marks the takes whose source clip is one of its
+  game's claps (by the source's clip name) and ships that game's own clap sound.
   `tools/rerig/motions.py` retargets a source game's motions (per-joint world rotation change from the shared bind pose; root
   from the pelvis, scaled by hip height; intro then loop played at 60 Hz: the whole intro, looped up to at least the donor's frames).
 - `costume_of` (optional, 0–13): the mod is a **costume pack for that disc character**, not a new character: the
