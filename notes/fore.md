@@ -139,6 +139,8 @@ bodies it comes from the roster.
   bad-shot lines: they play on most strokes), 2/4 short bad-shot / surprised lines (4, the whiff, plays on every
   first miss: a groan where the only bad-shot line is a sentence, e.g. T-Bone's jy2, opentennis B575), 7/9 happy celebrations and
   boasts plus the winning `vs` lines, 8/10 laments only plus the losing `vs` lines (a laughing bogey is left out).
+  A celebration line that opens on a long wordless sound is left out too (T-Bone's `g6`: 1.2 s of rising hiss before
+  the words, the longest of all 144 `g` takes; opentennis B592).
 - Nothing fills 6: golf has no partner calls.
 - Nothing fills 5 (hit by the ball, opentennis B560): every Fore! take is a word line (heckles, comments, versus);
   the only short exclamations ("Oh!" in jy3/jy0 of Regis, Maya, Kamala) are taken as their mis-hit / whiff lines.

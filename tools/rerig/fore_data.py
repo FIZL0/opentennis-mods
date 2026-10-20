@@ -147,7 +147,8 @@ PICKS = {
     16: {0: "jy3 sc05", 1: "sc05 jy3 ya.2", 3: "sc05 jy3", 2: "co.7 jy2", 4: "co.7 jy2",
          7: "g3 g5 co.5 co.2", 8: "g1 jy4 co.7 co.3", 9: "g6 g4 vs02 vs01 g2", 10: "jy4 g1 co.3"},
     17: {0: "jy1 jy2", 1: "jy1 jy2 co.5", 3: "jy1 jy2", 2: "sc23", 4: "jy2",
-         7: "g2 g3 g4 sc14", 8: "sc23 vs06 co.10", 9: "g5 g6 vs01 co.1", 10: "vs06 sc23 co.10"},
+         # 9: not g6, whose line opens on 1.2 s of wordless rising hiss (opentennis B592)
+         7: "g2 g3 g4 sc14", 8: "sc23 vs06 co.10", 9: "g5 vs01 co.1 vs03", 10: "vs06 sc23 co.10"},
     18: {0: "sc08 ya.1", 1: "sc08 ya.1 jy3 ya.11", 3: "sc08 ya.1", 2: "jy0 co.6", 4: "jy0",
          7: "g3 co.2 sc07 sc01", 8: "co.6 sc17 co.10 g1", 9: "co.11 g3 jy5 g4", 10: "vs06 vs05 sc17 co.10"},
     19: {0: "jy4 jy0", 1: "jy4 jy0 jy2", 3: "jy4 jy0", 2: "co.7 ya.6", 4: "co.7",
