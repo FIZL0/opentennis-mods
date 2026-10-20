@@ -39,6 +39,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, os.path.join(ROOT, "tools/rerig"))
 
 import build  # noqa: E402
+import edge_clamp  # noqa: E402
 import glb  # noqa: E402
 import i3m  # noqa: E402
 from gag_umpires import UMPIRES  # noqa: E402
@@ -229,6 +230,7 @@ def bake(src, dst):
     out.g["scene"] = 0
     nodes[top] = {"name": "unused"}  # the dropped scale node, left childless (indices stay)
     compact(out).write(dst)
+    edge_clamp.clamp(dst)  # no seam where a texture is sampled at its edge (opentennis B584)
 
 
 def compact(b):

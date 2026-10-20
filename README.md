@@ -136,6 +136,9 @@ textures, stacked in an order) are `standard/HST-TEXTURE-PACK-STANDARD.md`; `too
 - **Expert band** (opentennis B182): every mod but Anya and Wendy then has its power, spin, control, speed,
   stamina and reach moved to the same place within HST's expert rows (Miranda, Kent, Lola, Will) and an expert `ai_row`
   (`params_band_why`; `python3 tools/rerig/gag_stats.py` applies it to packed mods in place, once).
+- **Edge clamp** (opentennis B584): textures a model samples right at their edge clamp there instead of repeating
+  (`tools/rerig/edge_clamp.py`, run by `package.py` and the umpire builders; by hand on packed mods it bumps
+  `version`), so no seam shows down the middle of a mirrored face.
 - **Still open** (also listed per character in each `mod.json` `todo`):
   - confirming handedness (golf mods with a left glove are already left-handed and pre-mirrored, `tools/rerig/mirror.py`);
 

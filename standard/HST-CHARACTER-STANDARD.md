@@ -44,6 +44,9 @@ mods/<id>/
   (alpha test, HST's ≥ 0x40) and see-through parts `BLEND` (HST's two-pass ≥ / < 0x70 with blending).
   `doubleSided: false` drops back faces. Highlights: `material.extras.hst_mtl = {"shininess": s, "highlight": h}`
   (the MTL's specular power and strength, as `hst-gltf` exports them); without it the material is matte.
+  Each texture wraps as its sampler's `wrapS`/`wrapT` say (repeat when it has none), filtered linearly. Where a
+  model's UVs reach a texture's edge and stay inside [0, 1] (the middle of a mirrored face at u = 0), clamp that
+  axis (`CLAMP_TO_EDGE`): repeating, the edge samples blend in the texture's far side, a seam you can see through.
 - Normals: HST lights each vertex with its first influence's share of the normal on that joint and the rest on
   the weight blend of the others, i.e. exactly Σ wᵢ·Rᵢ·N.
 

@@ -27,6 +27,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 sys.path.insert(0, os.path.join(ROOT, "tools/psp2gltf"))
 sys.path.insert(0, HERE)
 import glb  # noqa: E402
+import edge_clamp  # noqa: E402
 import rerig  # noqa: E402
 from check import check  # noqa: E402
 from package import link  # noqa: E402
@@ -201,6 +202,7 @@ def stand(src, dst):
     out.g, out.bin = g, b
     g.pop("buffers", None)
     out.write(dst)
+    edge_clamp.clamp(dst)  # no seam where a texture is sampled at its edge (opentennis B584)
     return -floor
 
 
