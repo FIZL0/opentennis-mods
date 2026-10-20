@@ -80,18 +80,6 @@ Per PC `NN` (00-16): `xbdata/.../ga_{sg,ev,pz,ya,vs}_pcNN.sgd` (60/34/29/17/15 s
 caddie `*_caNN`. `data/sound/voice/menu/me_pc.sgd` (all characters, menu). Cue names in `names.txt` are raw (`?\t0xID\tname`, e.g.
 `pc00_20A`), id -> wave mapping not decoded. Streams `data/sound/stream/*.sgb` (music/ambience).
 
-## Claps (opentennis B586, 2026-10-20)
-The clap SE each golf game plays, shipped as a clap mod's `voice/11_0.wav` (`tools/rerig/claps.py` SOUND):
-- Out of Bounds: the lobby avatars' SE bank `nakazawa/lobbyNN_sound.xb` `se/abata.sgd` wave 004 (cue `abata_se_clap_32_L`:
-  cue -> SEQD group 0 seq 3 -> note 35 -> RGND region -> wave 3), a burst of claps, 32010 Hz, 1.68 s; the same in lobby01-06.
-- Open Tee 2: `cmn/cmn1.xb1` `plse.sgd` wave 042 (`hakusyu.vag`, "handclap"), 23361 Hz, 1.05 s. Its cue (name id 0x20050000)
-  -> SEQD group 5 seq 0, whose bytes read as (length, BCD digits) pairs: id 167, program 1, note 39 -> program 1's region
-  (39, 39) -> wave 41. A sequence's +4 field is its name's offset (`names.txt` for this bank is not in cue order).
-- Fore!: `GE/GE.XB` `se/plse.hd` sample 024 is the same recording as Open Tee 2's hakusyu (sample for sample, 28 samples
-  apart); extracted at the index's 19644 Hz (set 1 note 80, -14 st). The pitch Fore plays it at is not decoded.
-- Get a Grip has clap SEs too (lobby `lo_common.sgd` 007, `lo_se05` 006, court `co_seNN` 021) but no clip a mod uses claps.
-Which clips clap: OOB/Open Tee 2 `kuNN_cl`, OOB `rslt_clap_pcNN`, Fore `clap_NN` (claps.py CLAP).
-
 ## Unused lines (`out/voice_candidates/`, 2026-10-16)
 `tools/voice_candidates.py` transcribes (faster-whisper small) every voice wave of a golf mod's character that the mod does not
 ship and sorts it by keyword into `0-1-3_shout`, `2-4_mishit_whiff`, `7-9_won_point`, `8-10_lost_point`, `other_long`, with

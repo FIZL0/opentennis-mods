@@ -263,7 +263,7 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
     manifest["voice"] = "voice/"
     manifest["voice_counts"] = {str(k): v for k, v in voices(prog, mod).items()}
     manifest["voice_why"] = {str(k): v for k, v in vwhy.items()}
-    claps.apply(mod, game, manifest)  # clap takes stow the racket and clap (standard §6 Claps)
+    claps.apply(mod, manifest)  # clap takes put the racket away (claps.py)
     st, params = cast(game, D, tp)
     manifest["source_stats"] = st.get(n, {})
     if n in params and params[n][0]:
