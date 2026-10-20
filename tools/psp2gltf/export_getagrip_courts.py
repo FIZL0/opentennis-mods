@@ -731,6 +731,28 @@ def lines(M, skip):
     return xs[-1], zs[-1], xs, zs
 
 
+# Closed sets the layout court's intro flyover would leave (it starts and ends outside them): half width, half length
+# and height of the room (m) and the low pass's distance from the centre line, for `room_flyover`.
+ROOMS = {2: (26, 23, 8, 10), 16: (12, 24, 11, 7), 17: (8, 20, 14, 6.4)}
+
+
+def room_flyover(x, z, h, low):
+    """The court standard's `flyover` for a room: a high swing round behind one baseline, then a low pass along the
+    side, each looking at the court centre."""
+    def key(eye, frames=None, at=(0, 0, 0), **kw):
+        d = [t - e for t, e in zip(at, eye)]
+        k = {"eye": [round(v, 2) for v in eye], "pitch": round(-math.degrees(math.atan2(d[1], math.hypot(d[0], d[2]))), 2),
+             "yaw": round(math.degrees(math.atan2(d[0], d[2])), 2), **kw}
+        return k if frames is None else {"frames": frames, **k}
+    ks = [key((0.8 * x, -0.7 * h, 0.85 * z), fov=70, orbit=True),
+          key((-0.8 * x, -0.7 * h, 0.85 * z), 180, fov=70, ease_out=0.5),
+          key((-low, -1.5, -0.35 * z), 0, at=(0, -1, 0), fov=55),
+          key((-low, -1.5, 0.35 * z), 120, at=(0, -1, 0), fov=55, ease_out=0.4)]
+    for a, b in zip(ks, ks[1:]):  # turn the short way round
+        b["yaw"] += 360 * round((a["yaw"] - b["yaw"]) / 360)
+    return ks
+
+
 def choose_layout(surface, ro):
     back, side = min(ro[0], ro[1]), min(ro[2], ro[3])
     best = None
@@ -907,6 +929,8 @@ def export(n, label):
         Image.fromarray(rgba, "RGBA").save(os.path.join(mod, "lensflare.png"))
         man["lens_flare"] = "lensflare.png"
     man["indoor"] = indoor
+    if n in ROOMS:
+        man["flyover"] = room_flyover(*ROOMS[n])
     if placed:
         man["gimmicks"] = placed
     man["todo"] = todo

@@ -83,6 +83,13 @@ mods/<id>/
 - `light` may also carry `fill` / `fill_colour` (a second directional light, same conventions as `sun`), and
   `fog` an `"amount": [near, far]` (how much fog at `near` and at `far`, 0–1, linear between; absent `[0, 1]`).
 - `ambience_loop`: one `[start, end]` per `sound/ambience_<n>.wav`, as `bgm_loop`.
+- `flyover`: the match intro's camera flyover, for a closed set the layout court's flyover would leave (it is
+  drawn only: the intro's length and the match stay the layout's). Up to 20 keys, each `{"eye": [x, y, z],
+  "pitch", "yaw", "roll", "fov"}` (game space m, Y down; degrees: yaw 0 looks toward +z, 90 toward +x; pitch
+  below 0 looks down; `roll` 0 and `fov` 60 when absent). Every key after the first has `frames` (60 a second)
+  and moves the camera there over them (`ease` 0–1, default 1; `ease_out` 0–1, default 0, slows into the key);
+  `frames` 0 cuts to a new segment, which with `"orbit": true` swings round the court centre instead of sliding.
+  Absent: the layout court's flyover. Try it with `HST_INTRO=1 hst … --court-mod DIR`.
 - `lens_flare`: the flare sprite (PNG, alpha), drawn toward `sun` when the sun is on screen. Absent: no flare.
 - **Clear of the view**: a node whose name ends in `__clear` (before any `__singles`/`__doubles`) isn't drawn while
   it stands between the eye and the court: a line from the eye (any camera: match, cut-away, replay) to a point of
