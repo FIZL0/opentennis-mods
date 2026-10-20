@@ -168,7 +168,6 @@ def make(costume, src, out, clips):
         faced = any("weights" in chans[a].get(i, {}) for a in seq for i in fnodes)
         face = []
         named = {cnames[j]: j for j in joints}
-        through = 0
         for a, t in plan:
             if faced:
                 w = dict.fromkeys(fnames, 0.0)
@@ -215,7 +214,24 @@ def make(costume, src, out, clips):
                         r0 = node_mat(cg["nodes"][j])[:3, 3]
                         t[0], t[2] = r0[0], r0[2]
                     pos.append(t)
-            through += racket_inside(wa, named)
+
+        def drawn(f):
+            """World of joint j at frame f as the game draws the clip: the keyed rotations (and root translation)
+            over each joint's rest; un-keyed joints stay at rest."""
+            Wf = {}
+
+            def w(j):
+                if j not in Wf:
+                    p = cpar.get(j)
+                    nd = dict(cg["nodes"][j])
+                    if j == root or (sidx.get(cnames[j]) is not None and j not in mirrored):
+                        nd["rotation"] = [float(x) for x in rot[j][f]]
+                    if j == root:
+                        nd["translation"] = [float(x) for x in pos[f]]
+                    Wf[j] = (w(p) if p in joints_set else W0[p] if p is not None else np.eye(4)) @ node_mat(nd)
+                return Wf[j]
+            return w
+        through = sum(racket_inside(drawn(f), named) for f in range(len(plan)))
         times = np.arange(n + 1, dtype=np.float32) / FPS
         ti = o.accessor(times, glb.FLOAT, "SCALAR", minmax=True)
         ch, sm = [], []
