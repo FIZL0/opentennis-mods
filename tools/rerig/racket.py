@@ -26,6 +26,7 @@ sys.path.insert(0, os.path.join(ROOT, "tools/psp2gltf"))
 sys.path.insert(0, HERE)
 import glb  # noqa: E402
 from rerig import G, binds, norm, read, worlds  # noqa: E402
+import colour  # noqa: E402
 
 HST_LENGTH = 0.944  # butt to tip of every HST racket (PCnnC00 racket_nn.mdl, along its grip axis +Y)
 
@@ -39,7 +40,7 @@ def rigid(m):
     return r
 
 
-def make(part, model, out_path, node=None, length=HST_LENGTH, target=None):
+def make(part, model, out_path, node=None, length=HST_LENGTH, target=None, tint=None):
     g, b = glb.read(part)
     W, _ = worlds(g)
     names = [norm(n.get("name", "")) for n in g["nodes"]]
@@ -89,7 +90,10 @@ def make(part, model, out_path, node=None, length=HST_LENGTH, target=None):
                 if si not in imgs:
                     im = g["images"][si]
                     v = g["bufferViews"][im["bufferView"]]
-                    imgs[si] = o.add("images", {"bufferView": o.view(bytes(b[v.get("byteOffset", 0): v.get("byteOffset", 0) + v["byteLength"]])),
+                    data = bytes(b[v.get("byteOffset", 0): v.get("byteOffset", 0) + v["byteLength"]])
+                    if tint is not None:  # the frame's paint in the outfit's colour (colour.tint); PNG out
+                        data, im = colour.tint(data, tint), dict(im, mimeType="image/png")
+                    imgs[si] = o.add("images", {"bufferView": o.view(data),
                                                 "mimeType": im.get("mimeType", "image/png"), "name": im.get("name", "")})
                 m["pbrMetallicRoughness"]["baseColorTexture"]["index"] = o.add("textures", dict(tx, source=imgs[si]))
             mats[i] = o.add("materials", m)
