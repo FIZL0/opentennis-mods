@@ -1,8 +1,8 @@
 """Bigger Chief (opentennis task M11): HST's Big Chief (pc07) twice as big, swinging twice as fast, running at a
 quarter of his speed -> extras/hst_bigger_chief/ (committed: it holds no game data).
 
-Not in out/mods on purpose: he's an optional mod, so a dev's mods/hst-mods link doesn't load him by default. Install
-him from the mod store, or copy extras/hst_bigger_chief into the game's mods folder.
+Also written to out/mods/hst_bigger_chief/, so a dev's mods/hst-mods link loads him like the packaged mods. He's an
+optional mod: players install him from the mod store (or copy extras/hst_bigger_chief into the game's mods folder).
 
 python3 tools/rerig/hst_bigger_chief.py
 
@@ -14,7 +14,7 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(ROOT, "extras/hst_bigger_chief")
+OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
 VERSION = "1"
@@ -41,11 +41,12 @@ MOD = {
 
 
 def main():
-    os.makedirs(OUT, exist_ok=True)
-    with open(os.path.join(OUT, "mod.json"), "w") as f:
-        json.dump(MOD, f, ensure_ascii=False, indent=2)
-        f.write("\n")
-    print(OUT)
+    for out in OUTS:
+        os.makedirs(out, exist_ok=True)
+        with open(os.path.join(out, "mod.json"), "w") as f:
+            json.dump(MOD, f, ensure_ascii=False, indent=2)
+            f.write("\n")
+        print(out)
 
 
 if __name__ == "__main__":
