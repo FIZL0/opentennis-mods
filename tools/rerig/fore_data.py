@@ -109,7 +109,8 @@ def heights():
 # Tags: jyN / gN = bank jy_<code>N / g_<code>N (g: 1 bogey, 2 par, 3/4 birdie, 5/6 eagle, by the costume-0
 # celebration archive PCNN00SS.XB each sits in, its ga_ motion naming the result; Z's 7-10 are extra takes);
 # co.N / ya.N = take N of co_<code> / ya_<code>; vsNN / scNN = bank vs_<code>NN / sc_<code>NN (vsNN.K / scNN.K: take K,
-# else the first). Transcripts stay out of git (game data); notes/fore.md "Voices" says how to rebuild them.
+# else the first). Left out by ear: Emma g4, Falcon g5, Kamala g6 (music under the voice).
+# Transcripts stay out of git (game data); notes/fore.md "Voices" says how to rebuild them.
 PICKS = {
     0: {0: "jy0 jy1", 1: "jy0 jy1 ya.3 co.10", 3: "jy1 jy0", 2: "co.7 jy2", 4: "co.13",
         7: "g2 g4 co.11 co.10", 8: "sc15 co.7 co.4 sc18", 9: "g5 g4 vs00 vs02", 10: "vs07 vs06 vs04 vs05"},
@@ -117,7 +118,7 @@ PICKS = {
         7: "g2 g3 g4 sc14 co.5", 8: "g1 sc16 sc18 co.12 vs00.6", 9: "g5 g3 vs00.2 vs00.3 vs00.4",
         10: "vs00.8 vs00.7 vs00.6 g1 vs00.5"},
     2: {0: "jy1 jy0", 1: "jy1 jy0 ya.3 sc03", 3: "jy1 jy0 sc03", 2: "co.6 jy2", 4: "co.6 jy2",
-        7: "g2 g3 co.2 co.1", 8: "g1 jy4 co.6 sc17", 9: "g4 g3 co.2 vs02", 10: "vs05 vs07 vs04 g1 jy4"},
+        7: "g2 g3 co.2 co.1", 8: "g1 jy4 co.6 sc17", 9: "g3 co.2 vs02", 10: "vs05 vs07 vs04 g1 jy4"},
     3: {0: "jy0 jy1 ya.1", 1: "jy0 jy1 ya.1 ya.3 ya.2", 3: "jy0 jy1 ya.1", 2: "jy3 jy2", 4: "jy3",
         7: "g2 g3 g4 co.1", 8: "g1 jy3 sc19 vs06", 9: "g5 g6 vs00 g2", 10: "vs06 vs07 g1 sc19"},
     4: {0: "jy0 ya.6", 1: "jy0 ya.6", 3: "jy0 ya.6", 2: "jy2 sc14", 4: "sc14 ya.2",
@@ -131,7 +132,7 @@ PICKS = {
     8: {0: "co.1", 1: "co.1 co.4 sc01", 3: "co.1", 2: "jy1 jy4 jy0", 4: "jy0",
         7: "g2 g3 g4 co.5", 8: "jy4 co.6 co.13 sc16", 9: "g5 g4 sc01 co.11", 10: "co.13 co.6 vs04 vs05 sc16"},
     9: {0: "jy0 jy1", 1: "jy0 jy1", 3: "jy1 jy0", 2: "jy2 co.3", 4: "ya.6 jy2",
-        7: "g2 g4 co.4 co.5", 8: "co.7 jy2 co.6", 9: "co.1 g5 vs00 g4", 10: "vs07 vs06 vs04 co.7"},
+        7: "g2 g4 co.4 co.5", 8: "co.7 jy2 co.6", 9: "co.1 vs00 g4", 10: "vs07 vs06 vs04 co.7"},
     10: {0: "jy0 ya.11", 1: "jy0 ya.11 jy1", 3: "jy0 jy1 ya.11", 2: "jy2 co.8", 4: "jy2 co.8",
          7: "g2 g3 jy4 g4", 8: "g1 jy2 co.12", 9: "g5 g4 vs00 vs03", 10: "g1 vs05"},
     11: {0: "jy1 ya.9 co.4", 1: "jy1 ya.9 co.9 co.4", 3: "jy1 ya.9", 2: "jy2 co.6", 4: "jy2 co.8",
@@ -143,7 +144,7 @@ PICKS = {
     14: {0: "jy0 jy1 co.6", 1: "jy0 jy1 co.6 ya.3 ya.2", 3: "jy0 co.6 ya.2", 2: "jy2 ya.7 jy3", 4: "ya.7 jy2",
          7: "g2 g3 co.4 co.2", 8: "g1 jy4 jy3", 9: "g5 g6 sc05 vs02", 10: "vs05 vs07 g1 vs06"},
     15: {0: "jy1 jy0", 1: "jy1 jy0", 3: "jy1 jy0", 2: "jy3 jy4", 4: "jy3",
-         7: "g3 g5 co.1 vs01", 8: "jy4 co.7 vs06", 9: "g6 vs07 vs01 g3 g5", 10: "vs06 co.7 jy4"},
+         7: "g3 g5 co.1 vs01", 8: "jy4 co.7 vs06", 9: "vs07 vs01 g3 g5", 10: "vs06 co.7 jy4"},
     16: {0: "jy3 sc05", 1: "sc05 jy3 ya.2", 3: "sc05 jy3", 2: "co.7 jy2", 4: "co.7 jy2",
          7: "g3 g5 co.5 co.2", 8: "g1 jy4 co.7 co.3", 9: "g6 g4 vs02 vs01 g2", 10: "jy4 g1 co.3"},
     17: {0: "jy1 jy2", 1: "jy1 jy2 co.5", 3: "jy1 jy2", 2: "sc23", 4: "jy2",
