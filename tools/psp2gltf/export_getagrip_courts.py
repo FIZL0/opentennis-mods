@@ -12,8 +12,8 @@ What each court is made of (notes/getagrip.md "Courts"):
   courtNN_obj_0/1    obj/, tree/, bg/ models, placed by haichi/cNN_<stem>__haichi.i3m: one single-key track per
                      instance, `<model>__<NN|singles|doubles>`, in the models' own space (centimetres, Y up). The
                      net and the umpire's chair come as __singles / __doubles pairs -> kept, named so (§2 there).
-                     bg02_cloud (+ its looping motion) -> sky.glb, the rest -> court.glb. `_col` models are the
-                     collision, not drawn. `pc_locator` (one, or a __singles / __doubles pair) is where the umpire
+                     bgNN_cloud (+ its looping motion, a constant spin) -> sky.glb, the rest -> court.glb. `_col`
+                     models are the collision, not drawn. `pc_locator` (one, or a __singles / __doubles pair) is where the umpire
                      sits -> an `umpire_seat` node (§2 there); `player_locator` tracks, where the benched players
                      stand, are left out.
   courtNN_gimmick    gimmick/giNN_<Name>/: the reactive set pieces (pigeons that fly off, baskets that tip over),
@@ -562,14 +562,14 @@ class Scene:
                                   f"{np.round(P.min(0), 1).tolist()}..{np.round(P.max(0), 1).tolist()} m)")
         return True
 
-    def animate(self, name, motion, by_name):
+    def animate(self, name, motion, by_name, spin=False):
         """A looping motion on one instance's nodes (track `ns:Bone` also finds `Bone`); ROOTNODE keeps its
-        model-space turn."""
+        model-space turn. `spin`: Y-only turns at a constant rate (`anim.sample_track`)."""
         by = {k: v for k, v in by_name.items() if k != "ROOTNODE"}
         for tr in motion.tracks:
             if tr.name not in by and tr.name.split(":")[-1] in by:
                 by[tr.name] = by[tr.name.split(":")[-1]]
-        anim.add_animation(self.b, name, motion, by)
+        anim.add_animation(self.b, name, motion, by, spin=spin)
 
     def write(self, path):
         self.b.write(path)
@@ -873,7 +873,8 @@ def export(n, label):
         mots = sorted(glob(os.path.join(os.path.dirname(path), "*.i3m")))
         # only the dome and the clouds follow the eye; distant scenery (c02's and c14's `bg02_Enkei`, 75-200 m out, with its own
         # ground) stays put, as seen from the HST match camera 41 m off the centre
-        to_sky = re.search(r"_bg01_|_bg02_cloud", model, re.I)
+        # the cloud rings are 200-270 m across whatever their number (c13's, c14's and c18's `bg03`/`bg05` too)
+        to_sky = re.search(r"_bg01_|_bg\d\d_cloud", model, re.I)
         scene = ss if to_sky else gs if mots else sc
         node = scene.child(scene.top, name=tr.name, **placement(pos, rot, scl))
         by = scene.add(path, node)
@@ -886,7 +887,7 @@ def export(n, label):
         names = {os.path.basename(m)[:-4].rsplit("_", 1)[-1]: m for m in mots if not re.search(r"_b\d\d_", os.path.basename(m))}
         if names:
             m = names[next((k for k in REST if k in names), sorted(names)[0])]
-            scene.animate(tr.name, i3m.load(m), by)
+            scene.animate(tr.name, i3m.load(m), by, spin=bool(to_sky))
         if scene is gs:
             placed.append(f"{tr.name} (placed, {'loops ' + os.path.basename(m)[:-4] if names else 'still'})")
     if skipped:
