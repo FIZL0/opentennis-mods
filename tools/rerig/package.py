@@ -44,7 +44,8 @@ GAME_NAME = {"fore": "Hot Shots Golf Fore! (PS2)", "oob": "Hot Shots Golf: Out o
 # HST reaction motion <- Get a Grip's own reaction (intro, then its loop), per character (motions.py)
 PIN = {"fore": True, "oob": True, "opentee2": True}  # golf celebrations walk off their spot (notes/fore.md, oob.md): hold the root
 # Hz a game plays its exported clips at (60 if not listed): Open Tee 2's face TATs run twice as long as its body clips
-# in every emote, win and hole result (win00 90 frames vs 3.0 s), so it plays them at 30 Hz (opentennis B613)
+# in every emote, win and hole result (win00 90 frames vs 3.0 s), so it plays them at 30 Hz (opentennis B613).
+# The others' face tracks end with their body clips (Get a Grip's TATs, Fore!'s MOR: ratio 1, never 2): 60 Hz as exported.
 HZ = {"opentee2": 30}
 GAG_REACT = {"re_gu": "gu01", "re_di": "di01", "re_gu_set": "gu_set01", "re_di_set": "di_set01"}
 HST_ANI = gagmap.hst_xb(ROOT) + "/PCANI"
