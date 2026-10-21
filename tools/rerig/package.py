@@ -43,6 +43,9 @@ GAME_NAME = {"fore": "Hot Shots Golf Fore! (PS2)", "oob": "Hot Shots Golf: Out o
              "opentee2": "Hot Shots Golf: Open Tee 2 (PSP)"}
 # HST reaction motion <- Get a Grip's own reaction (intro, then its loop), per character (motions.py)
 PIN = {"fore": True, "oob": True, "opentee2": True}  # golf celebrations walk off their spot (notes/fore.md, oob.md): hold the root
+# Hz a game plays its exported clips at (60 if not listed): Open Tee 2's face TATs run twice as long as its body clips
+# in every emote, win and hole result (win00 90 frames vs 3.0 s), so it plays them at 30 Hz (opentennis B613)
+HZ = {"opentee2": 30}
 GAG_REACT = {"re_gu": "gu01", "re_di": "di01", "re_gu_set": "gu_set01", "re_di_set": "di_set01"}
 HST_ANI = gagmap.hst_xb(ROOT) + "/PCANI"
 # Get a Grip cue -> HST voice program (programs 7-10 follow reaction motions 0x2c-0x2f: re_gu, re_di, re_gu_set,
@@ -250,9 +253,10 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
             for k, extra in enumerate(takes.takes(game, n).get(hst_name, []), 1):
                 whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name} (takes.py)"
                 plan.append((f"{hst_name}.{k}", [extra], base[2], base[3]))
-        motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan)
+        hz = HZ.get(game, 60)
+        motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan, rate=hz / 60)
         manifest["motions"] = "motions.glb"
-        manifest["motions_why"] = {k: f"{whys.get(k, '')}; {' then '.join(seq)}{', root held on its spot' if pin else ''}, played at 60 Hz, its own length and at least the donor's clip ({fr} frames)"
+        manifest["motions_why"] = {k: f"{whys.get(k, '')}; {' then '.join(seq)}{', root held on its spot' if pin else ''}, played at {hz} Hz, its own length and at least the donor's clip ({fr} frames)"
                                    for k, seq, fr, pin in plan}
     sz = os.path.join(ROOT, f"out/rerig/{game}/sizing.json")
     if os.path.exists(sz):

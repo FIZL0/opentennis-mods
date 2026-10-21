@@ -253,8 +253,8 @@ def _anims(game, pc):
 
 def reactions(game, pc):
     """(glb, {hst: [intro, loop?]}, {hst: why}). Times are as exported (60 Hz); the face TATs run twice as long as
-    the I3M clips (e.g. win00 3.0 s vs 90 frames), so the game likely plays them at 30 Hz. package.py retimes to
-    the donor's clip anyway. Golf celebrations walk off their spot: package.py holds the root (PIN). Each is one
+    the I3M clips (e.g. win00 3.0 s vs 90 frames) in every emote, win and hole result, so the game plays them at
+    30 Hz: package.py plays them at that (HZ), at least the donor's clip long. Golf celebrations walk off their spot: package.py holds the root (PIN). Each is one
     clip, never followed by the idle: it holds its last frame to the end of the transition (opentennis B478)."""
     f, a = _anims(game, pc)
     if not a:

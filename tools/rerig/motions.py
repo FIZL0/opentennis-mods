@@ -119,9 +119,10 @@ def racket_inside(world, named):
     return inside(body) >= 3 or inside([([at(n) for n in HEAD[0]], HEAD[1])]) >= 1
 
 
-def make(costume, src, out, clips):
+def make(costume, src, out, clips, rate=1.0):
     """clips: [(hst_name, [source anims: intro, then an optional loop], frames or None[, pin])]; pin keeps the root's
-    horizontal position at rest."""
+    horizontal position at rest. `rate`: source seconds per second played (0.5: a game whose clips are exported at
+    60 Hz but played at 30, Open Tee 2; opentennis B613)."""
     cg, cb = glb.read(costume)
     sg, sb = glb.read(src)
     anims = {a["name"]: a for a in sg["animations"]}
@@ -152,11 +153,11 @@ def make(costume, src, out, clips):
         lens = [length(sg, sb, anims[s]) for s in seq]
         # at least the donor's frames, and the whole intro at its own speed (never squeezed: M1q, golf reactions ran
         # up to 3x fast squeezed into HST's shorter clips)
-        n = max(frames, int(round(lens[0] * FPS))) if frames else int(round(sum(lens) * FPS))
+        n = max(frames, int(round(lens[0] / rate * FPS))) if frames else int(round(sum(lens) / rate * FPS))
         # frame f of the HST clip -> (source anim, time): the intro, then the loop over and over
         plan = []
         for f in range(n + 1):
-            t = f / FPS
+            t = f / FPS * rate
             if t <= lens[0] or len(seq) == 1:
                 plan.append((seq[0], min(t, lens[0])))
             else:
