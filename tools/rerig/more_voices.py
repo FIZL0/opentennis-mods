@@ -11,7 +11,7 @@ The transcripts are faster-whisper's, cached by tools/voice_candidates.py in out
 (game data, git-ignored; run that tool first, with faster-whisper installed). Without the cache nothing is added.
 Sources are voice_candidates.sources(): the English banks only (never the Japanese copies: other actors), less any
 sample another character of the game also has (shared effects). OOB's yaji bank (ga_ya: taunts at the other player)
-is left out.
+is left out, and so is Open Tee 2's g bank (hole celebrations, a music sting under every line).
 """
 import hashlib
 import json
@@ -99,6 +99,8 @@ def _english(game, pc):
     out = {}
     for f in sorted(vc.sources(game, pc)[0]):
         if game == "oob" and re.search(r"/ga_ya_pc\d\d\.sgd/", f):
+            continue
+        if game == "opentee2" and re.search(r"/pc_g_\d\d[ab]\.sgd/", f):  # hole celebrations: music under the voice
             continue
         h = _md5(f)
         if _shared[game].get(h) == {pc}:

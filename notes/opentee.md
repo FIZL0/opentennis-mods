@@ -111,7 +111,8 @@ both casts) feeds package.py's golf() path, gag_stats.overrides and sizing.py.
   short lines every per-mode bank (st/vs/ya) shares = in-play shouts → 0 and 3 (three loudest by RMS), 1 (all, ≤5).
   **Voice lines** (2026-10-16): 7/9 (won) and 8/10 (lost) for pc00-09 are hand-picked from faster-whisper transcripts
   of the unused st/vs/ya/g waves (`opentee_data.py` WON/LOST, e.g. Mika "Yeah!"/"Amazing!", "Oh no!"/"Ugh!"); the `g`
-  bank's 2.5-4 s lines are the golf hole celebrations. Before, 7/9 were OT1's `hy_NN` awards lines, which mix losing
+  bank's 2.5-4 s lines are the golf hole celebrations, a music sting under
+  every one: no `g`/`gb` wave is used (opentennis, 2026-10-21). Before, 7/9 were OT1's `hy_NN` awards lines, which mix losing
   lines ("Oh dear!", "This can't be!") into the win programs. OT2's own `cd_hy_NN`/`cd_ma_NN` are the caddies'.
   Same for pc10-20 (incl. their `b` take sets), mis-hit/whiff 2/4 (MISS: "What?", "Hmm", "Uh-oh") and extra shouts
   for Shu (none shared), Patricia and Roger (SHOUT). Only English takes; more in `out/voice_candidates/` (notes/audio.md).

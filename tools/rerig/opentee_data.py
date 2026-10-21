@@ -184,9 +184,12 @@ HIT = {0: ["vs/008"], 1: ["st/003"], 2: ["st/003"], 3: ["st/008"], 4: ["st/010"]
 
 
 def _picks(pc, table):
+    """the table's waves, less the g/gb (hole celebration) ones: those carry a music sting under the voice"""
     out = []
     for k in table.get(pc, []):
         bank, w = k.split("/")
+        if bank in ("g", "gb"):
+            continue
         fs = _ot2_bank(bank[:-1], pc, "b") if bank.endswith("b") else _ot2_bank(bank, pc)
         if int(w) <= len(fs):
             out.append(fs[int(w) - 1])
@@ -226,10 +229,10 @@ def voices(game, pc):
     won, lost = _picks(pc, WON), _picks(pc, LOST)
     if won:
         prog[7] = prog[9] = won
-        why[7] = why[9] = "the st/vs/ya/g lines that say a win ('Yes!', 'Nice!', 'Hooray!'; by transcript, WON)"
+        why[7] = why[9] = "the st/vs/ya lines that say a win ('Yes!', 'Nice!', 'Hooray!'; by transcript, WON)"
     if lost:
         prog[8] = prog[10] = lost
-        why[8] = why[10] = "the st/vs/ya/g lines that say a loss ('Oh no!', 'Ugh!', 'Bad luck!'; by transcript, LOST)"
+        why[8] = why[10] = "the st/vs/ya lines that say a loss ('Oh no!', 'Ugh!', 'Bad luck!'; by transcript, LOST)"
     for p, w in ((2, "no mis-hit voice identifiable"), (4, "no whiff voice identifiable"),
                  (6, "no partner call in golf; the long g bank lines (1.5-4 s, unlabelled) are not calls"),
                  (8, "no losing line sorted yet (candidates: out/voice_candidates)"),
