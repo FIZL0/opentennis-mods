@@ -129,7 +129,12 @@ These games swap one whole-face texture (eyes + mouth together) instead of morph
 `{"materials": ["<glTF material>", …], "neutral": "<png>", "channels": {"joy_eye": "<png>", "joy_mouth": "<same png>",
 …}}`. `materials` names the costume's face materials (Get a Grip: `<stem>_face0`; its mirrored halves `face`/`faceL`
 are one material in the glTF). Each channel with a png is a weight driven by the donor's `.MOR` track of that name;
-the loader shows the texture of the strongest channel at 0.5 or more (on a tie the first by channel name), else neutral. A `null`
+the loader shows the texture of the strongest channel at 0.5 or more (on a tie the first by channel name), else neutral.
+An emotion's `_mouth` channel only counts when the emotion has no `_eye` png (a texture's eyes are what reads: the
+donors hold mouths alone, e.g. panting on tired runs). The swaps are paced: a face, once shown, stays at least 2/30 s
+(the sources' shortest blink), and a `blink_eye` that starts within 0.8 s of the last blink's start is skipped (the donors
+restart their stance blink on every stop and turn). So map each channel to a face that fits all of its uses: `anger` is
+the in-play effort face (held at half through every run, full on strokes and serves), so give it open eyes. A `null`
 channel stays neutral; other keys are ignored. The game's own per-motion swaps are in `out/anims/getagrip/face_tracks.json` if a mod
 wants them exactly.
 

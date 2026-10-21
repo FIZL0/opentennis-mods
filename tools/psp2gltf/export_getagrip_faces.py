@@ -61,21 +61,25 @@ LABELS = {
 # unless a better partial match exists. doki = flustered/nervous/surprised.
 CH = ["blink_eye", "joy_eye", "joy_mouth", "anger_eye", "anger_mouth", "sorrow_eye", "sorrow_mouth",
       "doki_eye", "doki_mouth"]
+# anger is face 3 for everyone: HST's donors play anger as the in-play effort face (held at half through every run,
+# full on strokes, serves, smashes), the moments Get a Grip's shared motions show face 3 (dash, every shot, serve).
+# A glare or eyes-closed/xx pick there (old 0: 8, 1: 6, 6: 6, 8: 4, 9: 4, 13: 6) shut or scrunched the eyes all
+# rally (opentennis B614).
 PICK = {  # joy, anger, sorrow, doki  (each (N, approx)); blink always 1
-    0: ((5, 0), (8, 0), (4, 0), (10, 0)),
-    1: ((2, 0), (6, 0), (4, 0), (8, 0)),
+    0: ((5, 0), (3, 0), (4, 0), (10, 0)),
+    1: ((2, 0), (3, 0), (4, 0), (8, 0)),
     2: ((8, 1), (3, 0), (4, 1), (5, 0)),
-    3: ((5, 0), (3, 1), (4, 0), (8, 0)),
-    4: ((5, 0), (3, 1), (4, 0), (8, 0)),
+    3: ((5, 0), (3, 0), (4, 0), (8, 0)),
+    4: ((5, 0), (3, 0), (4, 0), (8, 0)),
     5: ((5, 0), (3, 0), (7, 1), (8, 0)),
-    6: ((2, 1), (6, 0), (4, 0), (10, 0)),
-    7: ((7, 0), (3, 1), (4, 0), (11, 0)),
-    8: ((2, 0), (4, 1), (9, 0), (10, 0)),
-    9: ((2, 0), (4, 0), (9, 1), (10, 0)),
+    6: ((2, 1), (3, 0), (4, 0), (10, 0)),
+    7: ((7, 0), (3, 0), (4, 0), (11, 0)),
+    8: ((2, 0), (3, 0), (9, 0), (10, 0)),
+    9: ((2, 0), (3, 0), (9, 1), (10, 0)),
     10: ((2, 0), (3, 0), (9, 0), (10, 0)),
-    11: ((2, 0), (3, 1), (4, 0), (12, 0)),
+    11: ((2, 0), (3, 0), (4, 0), (12, 0)),
     12: ((5, 0), (3, 0), (4, 0), (7, 1)),
-    13: ((2, 0), (6, 1), (4, 0), (9, 0)),
+    13: ((2, 0), (3, 0), (4, 0), (9, 0)),
 }
 
 
