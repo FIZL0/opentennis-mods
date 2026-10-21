@@ -1,0 +1,22 @@
+{
+  "standard": 1,
+  "id": "hst_bigger_chief",
+  "name": "Bigger Chief",
+  "source": "Hot Shots Tennis (PS2) pc07, grown",
+  "disc_body": true,
+  "donor": 7,
+  "donor_why": "Big Chief himself: his disc body, motions, faces and voice",
+  "hand": "right",
+  "params": {
+    "base": 7,
+    "override": {}
+  },
+  "params_why": "Big Chief's row; `scale` doubles its size-bound columns (reach, heights, collision)",
+  "ai_row": 7,
+  "face": "morph",
+  "scale": 2,
+  "size_why": "twice Big Chief's size",
+  "swing_speed": 2,
+  "run_speed": 0.25,
+  "version": "1"
+}

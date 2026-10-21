@@ -1,5 +1,8 @@
 """Bigger Chief (opentennis task M11): HST's Big Chief (pc07) twice as big, swinging twice as fast, running at a
-quarter of his speed -> out/mods/hst_bigger_chief/.
+quarter of his speed -> extras/hst_bigger_chief/ (committed: it holds no game data).
+
+Not in out/mods on purpose: he's an optional mod, so a dev's mods/hst-mods link doesn't load him by default. Install
+him from the mod store, or copy extras/hst_bigger_chief into the game's mods folder.
 
 python3 tools/rerig/hst_bigger_chief.py
 
@@ -11,7 +14,7 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))
-OUT = os.path.join(ROOT, "out/mods/hst_bigger_chief")
+OUT = os.path.join(ROOT, "extras/hst_bigger_chief")
 
 # bump on any change to the manifest, so the mod store sees an update
 VERSION = "1"
