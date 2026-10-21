@@ -94,8 +94,6 @@ python3 tools/rerig/hst_umpires.py     # HST's own five chair umpires, stood up 
 python3 tools/rerig/hst_bigger_chief.py   # Big Chief at 2x size, 2x swing, 1/4 run (only a mod.json: disc_body, standard §6) -> extras/hst_bigger_chief/ (committed) and out/mods/hst_bigger_chief/
 python3 tools/rerig/gag_umpires.py && python3 tools/psp2gltf/export_getagrip_umpires.py && python3 tools/psp2gltf/export_getagrip_umpire_previews.py   # Get a Grip's eight chair umpires + their select pictures
 python3 tools/psp2gltf/export_getagrip_courts.py && python3 tools/psp2gltf/export_getagrip_court_loading.py   # Get a Grip's sixteen courts + their loading pictures
-# optional: HST_MENU=chars HST_BAKE=all hst <iso> with these mods installed, then
-# python3 tools/rerig/previews.py <iso dir>/cache/previews/<boot>-r<N>   # ships the select pictures
 ```
 
 One model, with HST's forehand to look at:
