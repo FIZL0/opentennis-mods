@@ -91,6 +91,7 @@ python3 tools/rerig/make_skeleton.py   # standard/hst_skeleton.json, from the HS
 python3 tools/rerig/batch.py           # every character; writes out/rerig/<game>/check.txt
 python3 tools/rerig/package.py         # out/mods/<game>_pcNN_<name>/
 python3 tools/rerig/hst_umpires.py     # HST's own five chair umpires, stood up -> out/mods/hst_umpire_NN_<name>/ (needs ../opentennis: ISO, context/xb, hst-gltf + bankwav built)
+python3 tools/rerig/hst_bigger_chief.py   # Big Chief at 2x size, 2x swing, 1/4 run (only a mod.json: disc_body, standard §6) -> out/mods/hst_bigger_chief/
 python3 tools/rerig/gag_umpires.py && python3 tools/psp2gltf/export_getagrip_umpires.py && python3 tools/psp2gltf/export_getagrip_umpire_previews.py   # Get a Grip's eight chair umpires + their select pictures
 python3 tools/psp2gltf/export_getagrip_courts.py && python3 tools/psp2gltf/export_getagrip_court_loading.py   # Get a Grip's sixteen courts + their loading pictures
 # optional: HST_MENU=chars HST_BAKE=all hst <iso> with these mods installed, then
