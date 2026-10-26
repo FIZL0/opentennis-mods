@@ -19,7 +19,8 @@ What each court is made of (notes/getagrip.md "Courts"):
   courtNN_gimmick    gimmick/giNN_<Name>/: the reactive set pieces (pigeons that fly off, baskets that tip over),
                      placed by setting/cNN_escape_gimmick.csv / cNN_break_gimmick.csv at the first point of their
                      route in cNN_route.dat (u32 routes; each u32 n, n x (u32 route id, f32 x, y, z metres)),
-                     facing the csv's default angle -> gimmick.glb, each looping its resting motion. The reactions
+                     facing the csv's default angle -> gimmick.glb, each looping its resting motion; one whose point
+                     is over the sea (c04's shark: 1.28 m up, the sea at -1.31) floats on it instead. The reactions
                      (escape along the route, break into the `_b01` model) live in the encrypted program: not here.
   1_courtsetting     court.csv (stem, GRASS/HARD/CLAY, indoor), courtlight.csv (ambient, light 0 and 1: colour,
                      direction toward the light, Y up), fogsetting.csv (amount near/far, distance near/far, colour)
@@ -625,9 +626,43 @@ def routes(path):
     return out
 
 
-def gimmicks(dirs, n, sc, todo, by_haichi):
+def sea_level(M):
+    """(x, y, z) in the route's cm -> the height of the sea under it if the first surface of the ground model
+    below the point is water (a `water` texture: the sea and the glints on it), else None. Get a Grip's routes put
+    its swimmers above the sea (c04's shark at 1.28 m, the sea at -1.31: the whole shark on top of it, opentennis
+    B679); the program must hold them in the water, the data says nothing of how deep, so they float at the sea's
+    own height (`@water`), the shark's fin and tail tip out of it."""
+    tris = []
+    for j, ps in M.rigid.items():
+        W = M.sk.world[j] @ build.F
+        for p in ps:
+            tex = M.m.materials[p.material].texture if p.material < len(M.m.materials) else ""
+            for pr in p.prims:
+                t = np.array(i3d.prim_triangles(pr), np.int64).reshape(-1, 3)
+                if len(t):
+                    tris.append(((pr.pos @ W[:3, :3] + W[3, :3])[t], "water" in tex.lower(), "@water" in tex))
+    T = np.concatenate([t for t, _, _ in tris])
+    water = np.concatenate([np.full(len(t), w) for t, w, _ in tris])
+    sea = np.concatenate([np.full(len(t), s) for t, _, s in tris])
+    A, B, C = T[:, 0], T[:, 1], T[:, 2]
+    d = (B[:, 2] - C[:, 2]) * (A[:, 0] - C[:, 0]) + (C[:, 0] - B[:, 0]) * (A[:, 2] - C[:, 2])
+    ok = abs(d) > 1e-9
+    d = np.where(ok, d, 1)
+
+    def level(x, y, z):
+        l1 = ((B[:, 2] - C[:, 2]) * (x - C[:, 0]) + (C[:, 0] - B[:, 0]) * (z - C[:, 2])) / d
+        l2 = ((C[:, 2] - A[:, 2]) * (x - C[:, 0]) + (A[:, 0] - C[:, 0]) * (z - C[:, 2])) / d
+        h = l1 * A[:, 1] + l2 * B[:, 1] + (1 - l1 - l2) * C[:, 1]
+        under = ok & (l1 >= -1e-6) & (l2 >= -1e-6) & (l1 + l2 <= 1 + 1e-6) & (h <= y + 1)
+        if not under.any() or not water[under][np.argmax(h[under])] or not (under & sea).any():
+            return None
+        return float(h[under & sea].max())
+    return level
+
+
+def gimmicks(dirs, n, sc, todo, by_haichi, afloat):
     """Place the csv's gimmicks at their routes' first points -> gimmick.glb's instances; returns what's in it.
-    by_haichi: folders the placement file already put down."""
+    by_haichi: folders the placement file already put down; afloat: `sea_level` of the ground model."""
     folders = {}
     for d in dirs:
         for g in glob(os.path.join(d, "gimmick", "gi*")):
@@ -658,16 +693,17 @@ def gimmicks(dirs, n, sc, todo, by_haichi):
         used.add(folder)
         model = next(p for p in sorted(glob(os.path.join(folders[folder], "*.psp.i3r")))
                      if not re.search(r"_(col|b01)\.psp", p))
-        x, y, z = rt[route][0]
+        x, y, z = (100 * c for c in rt[route][0])
+        sea = afloat(x, y, z)
         inst = f"{folder}_r{route}"
-        node = sc.child(sc.top, name=inst, **placement((100 * x, 100 * y, 100 * z), yaw(angle)))
+        node = sc.child(sc.top, name=inst, **placement((x, y if sea is None else sea, z), yaw(angle)))
         by = sc.add(model, node)
         sc.mark_clear(node, model, by)
         mots = {os.path.basename(m)[:-4].split("_", 3)[-1]: m for m in glob(os.path.join(folders[folder], "*.i3m"))}
         rest = next((k for k in REST if k in mots), None)
         if rest:
             sc.animate(inst, i3m.load(mots[rest]), by)
-        placed.append(f"{inst} ({kind}, {'loops ' + rest if rest else 'still'})")
+        placed.append(f"{inst} ({kind}, {'loops ' + rest if rest else 'still'}{'' if sea is None else ', on the sea'})")
     for f in sorted(set(folders) - used - {os.path.basename(x) for x in by_haichi}):
         todo.append(f"gimmick {f}: no row in the escape/break csvs (placed by the program), not in gimmick.glb")
     return placed
@@ -903,7 +939,7 @@ def export(n, label):
         ss.write(os.path.join(mod, "sky.glb"))
     elif os.path.exists(os.path.join(mod, "sky.glb")):
         os.remove(os.path.join(mod, "sky.glb"))
-    placed += gimmicks(dirs, n, gs, todo, folders)
+    placed += gimmicks(dirs, n, gs, todo, folders, sea_level(G))
     if gs.cleared:
         todo.append("left out of gimmick.glb, standing in HST's match view within %g m of its eye (Get a Grip's "
                     "closer camera has them behind it): %s" % (EYE_CLEAR, "; ".join(gs.cleared)))
