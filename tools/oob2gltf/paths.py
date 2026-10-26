@@ -48,11 +48,12 @@ def tex_dir(pc, costume):
 
 
 def find_tex(pc, costume, name):
-    """Case-insensitive lookup (REM names differ in case from the archive, e.g. p00_Honaka vs p00_honaka)."""
+    """Case-insensitive lookup by name without extension (REM names differ in case from the archive, e.g. p00_Honaka vs
+    p00_honaka, and Kratos's name the artist's .psd where the archive has the .dds)."""
     d = tex_dir(pc, costume)
-    want = name.lower()
+    want = os.path.splitext(name.lower())[0]
     for f in os.listdir(d) if os.path.isdir(d) else []:
-        if f.lower() == want:
+        if os.path.splitext(f.lower())[0] == want:
             return os.path.join(d, f)
     return None
 
