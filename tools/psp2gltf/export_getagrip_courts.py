@@ -735,6 +735,12 @@ def lines(M, skip):
 # and height of the room (m) and the low pass's distance from the centre line, for `room_flyover`.
 ROOMS = {2: (26, 23, 8, 10), 16: (12, 24, 11, 7), 17: (8, 20, 14, 6.4)}
 
+# Water whose texture slides (the standard's `scroll`: texture repeats a second, u and v), by material name. The PSP
+# program animates it (its data has no track for it), so the speeds are set by eye: each layer drifts its own way, the
+# additive caustics against the sea under them, so the ripples shimmer rather than slide as one sheet.
+SCROLL = {4: {"c04_resort_water01@water": [0.006, 0.004], "c04_resort_water02@water": [-0.004, 0.007],
+              "c04_resort_waterAdd": [-0.009, -0.005], "c04_resort_waterAdd@add": [-0.009, -0.005]}}
+
 
 def room_flyover(x, z, h, low):
     """The court standard's `flyover` for a room: a high swing round behind one baseline, then a low pass along the
@@ -932,6 +938,8 @@ def export(n, label):
     man["indoor"] = indoor
     if n in ROOMS:
         man["flyover"] = room_flyover(*ROOMS[n])
+    if n in SCROLL:
+        man["scroll"] = SCROLL[n]
     if placed:
         man["gimmicks"] = placed
     man["todo"] = todo

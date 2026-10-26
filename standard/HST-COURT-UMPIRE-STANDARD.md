@@ -98,6 +98,10 @@ mods/<id>/
   at rest, or the eye is inside it. Its skinned meshes go with it when all their joints are under it. For set pieces
   that another game's closer camera had behind its back (Get a Grip's basket goals behind each baseline). A piece whose top is under 1.5 m is always drawn. Applies to
   `court.glb` and `gimmick.glb`.
+- `scroll`: `{"<material name>": [u, v]}`, materials of `court.glb`/`gimmick.glb`/`sky.glb` whose texture slides by
+  that many texture repeats a second (within ±10), looping forever: the sea's ripples, a river, a waterfall (the disc
+  courts' `.UVA` scrolls). Give layers stacked on each other different directions so they shimmer rather than slide
+  as one sheet. Its texture should repeat. Absent: nothing slides.
 - `gimmick.glb`'s animations each drive one set piece and loop on their own clocks, all playing at once; a set piece
   with none stands still. They are drawn only, like `court.glb`: no collision, the ball passes through.
 - Optional, informational: `indoor` (bool), `gimmicks` (what `gimmick.glb` holds).
