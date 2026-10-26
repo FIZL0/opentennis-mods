@@ -228,6 +228,8 @@ def primitive(b, m, mi=None, tangents=False):
                 p['targets'].append({'POSITION': zero, 'NORMAL': zero})
             else:
                 idx, dp, dn = t
+                # the source has NaN normal deltas (Fernando c11's anger_mouth): a NaN in the file fails the load
+                dp, dn = np.nan_to_num(dp, nan=0, posinf=0, neginf=0), np.nan_to_num(dn, nan=0, posinf=0, neginf=0)
                 p['targets'].append({'POSITION': b.sparse_vec3(n, idx, dp), 'NORMAL': b.sparse_vec3(n, idx, dn)})
     return p
 
