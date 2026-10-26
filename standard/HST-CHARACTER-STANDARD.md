@@ -259,11 +259,16 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   contact, stay timed to their contact as any character's.
 - `run_speed` (optional, 0.1–4, default 1): the character runs this many times as fast (its `SPE` stat × this; the
   stamina and AI read the same paced stat). The run cycle animation plays at the donor's pace.
-- A mod with `disc_body`, `scale`, `swing_speed` or `run_speed` doesn't play online yet: the online lobby refuses it.
+- `shot_power` (optional, 1–4, default 1): serves, drives, volleys and smashes leave the racket this many times as
+  fast as the shot table's speed, aimed at the same spot: the launch angle is solved on the ball's flight so the first
+  bounce lands where the shot was aimed, and a shot too fast to clear the net slows toward the table's speed until it
+  does. Lobs and drop shots keep the table launch. A mod with a `scale` other than 1 gets the same solve at power 1
+  (the tables only cover a stock body's contact heights, so a grown server's serves flew long).
+- A mod with `disc_body`, `scale`, `swing_speed`, `run_speed` or `shot_power` doesn't play online yet: the online lobby refuses it.
 - `face`: `morph` (§4a channels), `texture` (§4b, needs `face.json`) or `none` (no face animation).
 - `eyes` (optional): the glTF material names of the eyes, moved by the donor's `.UVA` eye track (§4c).
 - The HST loader (`crates/hst-base/src/mods.rs`) rejects a mod with `<path>: <reason>` when the manifest is off
-  (`standard` ≠ 1, a missing costume, a `costume_of` whose `donor`/`base`/`ai_row` differ from it or that overrides params, a `disc_body` that isn't `true`/`false`, lists `costumes`, has a `face` other than `morph` or is a `costume_of`, a `scale`/`swing_speed`/`run_speed` out of its range or a `scale` without `disc_body`, `donor`/`base`/`ai_row` outside 0–13, `hand` not right/left, an `override`
+  (`standard` ≠ 1, a missing costume, a `costume_of` whose `donor`/`base`/`ai_row` differ from it or that overrides params, a `disc_body` that isn't `true`/`false`, lists `costumes`, has a `face` other than `morph` or is a `costume_of`, a `scale`/`swing_speed`/`run_speed`/`shot_power` out of its range or a `scale` without `disc_body`, `donor`/`base`/`ai_row` outside 0–13, `hand` not right/left, an `override`
   key that is no TParam column, an `eyes` that is not a list of names, a `motions` file that is missing, names no motion the donor has or, other than the four reactions, is shorter than the donor's clip) or a costume fails §7's FAIL checks; WARN checks are logged. Buffers and images
   must be embedded in the `.glb`; it skips glTF accessor validation (older rerig output lacks POSITION min/max).
 - Optional, informational: `donor_why`, `size_why` (how the height and head were set), `racket_why`, `source_stats` (the source game's raw stats), `params_why` (per overridden column: source stat, value, rank → HST value), `ai_row_why`, `motions_why`, `voice_counts`, and `todo`
