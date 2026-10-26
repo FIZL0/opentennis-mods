@@ -296,7 +296,8 @@ inserted ForearmRoll change the local frames; drop or merge the Nub/Roll bones, 
 - `.uva` eye UV offsets are exported as extras only (no KHR_texture_transform); which material/texobj they drive
   (`eye__ID`) has to be wired up by the consumer.
 - Spring chains are exported (§3b) but simulated by HST's own mass-spring, not the game's solver; words 4–6, 8,
-  10, 11 unused. Collision primitives are parsed, not exported (hair can pass through the body). The cloth meshes
+  10, 11 unused. Collision ellipsoids are exported as standard §3c `extras.colliders` (HST pushes the masses out of them;
+  boxes/cylinders, only pc10's thighs, are not). The cloth meshes
   between mesh blocks (`skirt`, `uwagi`, `hane1`, `h_mimi`) are not decoded: skirts and jackets stay rigid.
 - LOD/`_l` variants, clubs (`ueno/club`), caddies (`kikkawa/caddie`), avatars' bodies.
 - Tick rate 2400/s is not confirmed from the executable. 4800/s (the 3ds Max default) was used first and played
