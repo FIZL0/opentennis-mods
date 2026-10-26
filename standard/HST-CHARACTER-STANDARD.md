@@ -268,7 +268,7 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   that grade (power, spin, control, timing windows, speed, stamina). The select shows the grades it ends up with.
   `"S"` takes each cell at the best any stock character has. Applies after `scale`, before `params.override`. Shot
   speeds stay within the stock game's (its trajectory tables).
-- `serve_speed`, `shot_speed` (optional, whole numbers 1 to 4): its serves / other shots fly this many times as fast
+- `serve_speed`, `shot_speed` (optional, whole numbers 1 to 4): its serves / other shots (not lobs) fly this many times as fast
   until their first bounce, along the same path (so they land where they were aimed).
 - A mod with `disc_body`, `scale`, `swing_speed`, `run_speed`, `stats`, `serve_speed` or `shot_speed` doesn't play online yet: the online lobby refuses it.
 - `face`: `morph` (§4a channels), `texture` (§4b, needs `face.json`) or `none` (no face animation).
