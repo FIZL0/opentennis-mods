@@ -115,7 +115,8 @@ class Rem:
     # ---- face morph targets ---------------------------------------------------------------------------------
     def _targets(self, m):
         """Morph block right after a mesh's last stream: u32 nTargets; per target u32 n, and if n > 0: u32 target
-        ordinal, u32 vertex_index[n] (sorted), f32x3 position delta[n], f32x3 normal delta[n]. None if absent."""
+        ordinal, u32 vertex_index[n] (sorted), f32x3 position delta[n], f32x3 normal delta[n]. None if absent.
+        The ordinal counts on across the file's morph meshes (a tongue before the head starts the head at 5)."""
         d, o, nv = self.d, m['end'], len(m['pos'])
         if o + 8 > self.node_start:
             return None
@@ -124,13 +125,15 @@ class Rem:
             return None
         o += 4
         out = []
+        base = None
         for t in range(nt):
             n = self.u32(o)
             if n == 0:
                 out.append(None)
                 o += 4
                 continue
-            if n > nv or self.u32(o + 4) != t:
+            base = self.u32(o + 4) - t if base is None else base
+            if n > nv or self.u32(o + 4) != base + t:
                 return None
             idx = np.frombuffer(d[o + 8:o + 8 + 4 * n], '>u4').astype(np.int64)
             o += 8 + 4 * n
@@ -157,10 +160,11 @@ class Rem:
         return out
 
     def _find_morphs(self):
-        """Every mesh of the morph group (face, teeth, tongue, ...) carries its own target block; the shared target
-        name table (u32 nTargets; str name[nTargets]) follows the last block of the group."""
+        """Every mesh of a morph group (face, teeth, tongue, ...) carries its own target block; the group's target
+        name table (u32 nTargets; str name[nTargets]) follows its last block. A model can hold several groups (a
+        tongue's, then the head's): their names are joined and each mesh's targets padded to that whole list."""
         self.target_names = None
-        group = []
+        group, groups = [], []
         for m in self.meshes:
             r = self._targets(m)
             if r is None:
@@ -171,10 +175,17 @@ class Rem:
             if names is not None:
                 if any(len(g['targets']) != len(names) for g in group):
                     raise ValueError('morph group with differing target counts')
-                self.target_names = names
+                groups.append((group, names))
                 group = []
         if group:
             raise ValueError('morph targets without a name table')
+        if groups:
+            self.target_names = [n for _, names in groups for n in names]
+            k, total = 0, len(self.target_names)
+            for g, names in groups:
+                for m in g:
+                    m['targets'] = [None] * k + m['targets'] + [None] * (total - k - len(names))
+                k += len(names)
 
     # ---- meshes ---------------------------------------------------------------------------------------------
     def _chain(self, o, n):
