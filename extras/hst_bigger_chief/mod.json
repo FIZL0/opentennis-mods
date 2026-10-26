@@ -9,15 +9,20 @@
   "hand": "right",
   "params": {
     "base": 7,
-    "override": {}
+    "override": {
+      "STA": "14",
+      "飛びつき減少/バックハンド減少/スマッシュ減少": "16/8/16"
+    }
   },
-  "params_why": "Big Chief's row; `scale` grows its reach columns (reach, dive, collision), `stats` A grades the rest",
+  "params_why": "Big Chief's row; `scale` grows its reach columns (reach, dive, collision), `stats` S takes the roster's best of the rest; tiny stamina, dives, backhands and smashes cost twice a stock one's",
   "ai_row": 7,
   "face": "morph",
   "scale": 1.5,
   "size_why": "1.5x Big Chief's size",
-  "run_speed": 0.25,
-  "stats": "A",
+  "run_speed": 0.2,
+  "stats": "S",
+  "serve_speed": 3,
+  "shot_speed": 2,
   "joke": true,
-  "version": "4"
+  "version": "5"
 }

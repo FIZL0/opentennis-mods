@@ -1,5 +1,5 @@
-"""Bigger Chief (opentennis task M11): HST's Big Chief (pc07) 1.5x as big, hitting 3x as hard, running at a quarter
-of his speed -> extras/hst_bigger_chief/ (committed: it holds no game data).
+"""Bigger Chief (opentennis task M11): HST's Big Chief (pc07) 1.5x as big, the roster's best stats, serves 3x and
+shots 2x as fast, running at a fifth of his speed with almost no stamina -> extras/hst_bigger_chief/ (committed: it holds no game data).
 
 Also written to out/mods/hst_bigger_chief/, so a dev's mods/hst-mods link loads him like the packaged mods. He's an
 optional mod: players install him from the mod store (or copy extras/hst_bigger_chief into the game's mods folder).
@@ -7,7 +7,7 @@ optional mod: players install him from the mod store (or copy extras/hst_bigger_
 python3 tools/rerig/hst_bigger_chief.py
 
 Only a mod.json: `disc_body` plays pc07's own costumes, faces, racket and voice from the player's disc (standard §6),
-`scale`/`run_speed`/`stats` do the rest. Nothing from the disc is read or written here.
+`scale`/`run_speed`/`stats`/`serve_speed`/`shot_speed` do the rest. Nothing from the disc is read or written here.
 """
 import json
 import os
@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
-VERSION = "4"
+VERSION = "5"
 
 MOD = {
     "standard": 1,
@@ -28,14 +28,16 @@ MOD = {
     "donor": 7,
     "donor_why": "Big Chief himself: his disc body, motions, faces and voice",
     "hand": "right",
-    "params": {"base": 7, "override": {}},
-    "params_why": "Big Chief's row; `scale` grows its reach columns (reach, dive, collision), `stats` A grades the rest",
+    "params": {"base": 7, "override": {"STA": "14", "飛びつき減少/バックハンド減少/スマッシュ減少": "16/8/16"}},
+    "params_why": "Big Chief's row; `scale` grows its reach columns (reach, dive, collision), `stats` S takes the roster's best of the rest; tiny stamina, dives, backhands and smashes cost twice a stock one's",
     "ai_row": 7,
     "face": "morph",
     "scale": 1.5,
     "size_why": "1.5x Big Chief's size",
-    "run_speed": 0.25,
-    "stats": "A",
+    "run_speed": 0.2,
+    "stats": "S",
+    "serve_speed": 3,
+    "shot_speed": 2,
     "joke": True,
     "version": VERSION,
 }
