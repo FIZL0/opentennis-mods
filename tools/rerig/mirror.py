@@ -164,9 +164,12 @@ def mirror(src, dst):
     for k in range(len(joints)):  # extras by position: same mirrored spot, twin parents
         if twin[k] is not None:
             continue
+        # twin parents required: oob pivots sit anywhere, and Kate's belt cuff (under the cuffs chain) twinned the
+        # shoulder badge (under the left arm) by position alone, so the cuff orbited her shoulder
         cand = [c for c in range(len(joints)) if c != k and np.linalg.norm(S3 @ P[k] - P[c]) < tol
-                and (twin[c] is None or twin[c] == k)]
-        cand.sort(key=lambda c: (jpar[c] is None or jpar[k] is None or twin[jpar[k]] != jpar[c], np.linalg.norm(S3 @ P[k] - P[c])))
+                and (twin[c] is None or twin[c] == k)
+                and jpar[c] is not None and jpar[k] is not None and twin[jpar[k]] == jpar[c]]
+        cand.sort(key=lambda c: np.linalg.norm(S3 @ P[k] - P[c]))
         if cand:
             twin[k], twin[cand[0]] = cand[0], k
             stats["paired"] += 2

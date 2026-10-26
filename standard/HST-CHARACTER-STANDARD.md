@@ -253,6 +253,10 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   clip (or take) plays: it pops up from the floor as the clip starts and back down as it ends. A path outside the
   folder, or no such file, fails the load. Looks only, as the clip. `tools/rerig/package.py` gives each Out of Bounds
   mod a sit-down take of `re_di` on the lobby's piano bench (`tools/oob2gltf/seat.py`).
+  **Voice**: `extras: {"voice": K}` on a reaction's animation (or take) makes it say key K of that reaction's voice
+  program (`voice/P_K.wav`, P the program the reaction speaks from) instead of a line picked as for the donor, so a
+  celebration says the line the source game plays with it. Sound only: the pick and the match are unchanged. K must be
+  a key the program has. package.py sets it from the source's own clip-to-cue pairing.
   `tools/rerig/motions.py` retargets a source game's motions (per-joint world rotation change from the shared bind pose; root
   from the pelvis, scaled by hip height; intro then loop played at 60 Hz: the whole intro, looped up to at least the donor's frames).
 - `costume_of` (optional, 0–13): the mod is a **costume pack for that disc character**, not a new character: the

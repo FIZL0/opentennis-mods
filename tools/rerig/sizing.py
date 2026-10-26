@@ -46,6 +46,9 @@ ONE_HEAD = {"getagrip"}
 # games sized head to foot (top of the mesh) rather than by Bip01 (opentennis B663)
 TOP_SIZED = {"oob"}
 # characters on HST's disc too, besides Gloria, who take their HST twin's top height outright: {game: {pc: HST name}}
+# HST refuses a model whose Bip01 is 0.2 m or less off the ground (opentennis mods.rs `conform`): OOB's Sackboy is
+# 0.16 m by his own model, so tiny characters are raised to just above it
+MIN_BIP01 = 0.21
 TWINS = {"oob": {13: "Suzuki"}}
 
 
@@ -204,4 +207,7 @@ def plan(game, models):
             B, N, T = min((heights(p) for p in models[n]), key=lambda h: h[2] / h[0])
             h = sizes[n][0] * B / (N + heads[n][0] * (T - N))
             sizes[n] = (h, f"{sizes[n][1]}; top {sizes[n][0]:.4f} m -> Bip01 {h:.4f} m by its own proportions and head factor")
+    for n, (h, why) in sizes.items():
+        if h < MIN_BIP01:
+            sizes[n] = (MIN_BIP01, f"{why}; raised to {MIN_BIP01} m, the smallest HST loads")
     return sizes, heads, {"hst_m_per_cm": k, "game_factor": c, "game_factor_why": why_c, "head_ratio_hst": want, "head_share": share}

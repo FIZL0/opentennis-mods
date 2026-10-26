@@ -24,11 +24,12 @@ only the program is encrypted again inside). What it adds for the mods:
 - Three guests, pc17-19 (Kratos 1 costume, Toro 6, Sackboy 6), with their own motion, prize, voice and option-sound
   archives and rows 17-19 of player.dat / the menu help. Profiles give no height (Kratos "Unknown", Toro "Purrr...",
   Sackboy "2¾ inches"), so sizing keeps each model's own height: Toro and Sackboy stay as small next to the cast as in
-  Out of Bounds (rerig's check calls Sackboy's 0.16 m pelvis a FAIL; he is packaged anyway).
+  Out of Bounds. Sackboy's own 0.16 m pelvis is under the game's 0.2 m floor (a mod outside it doesn't load), so
+  sizing raises the smallest to `MIN_BIP01` 0.21 m, just inside it.
 - Per-outfit motion sets (`pcNN_motion_cos.xb`, `_motion_menu_cos.xb`, `_others_cos.xb`, `prize/pc/pcNN_cos.xb`): the
   base set with a few clips swapped for the DLC outfits. The standard has one motions file per mod, so the DLC outfits
   play the base clips; the `_cos` sets aren't exported.
-- Voices: Kratos keeps the 58-slot layout but his hole results sit in a group 10 of their own (`oob_data.EXTRA`);
+- Voices: Kratos keeps the 58-slot layout but his hole results sit in a group 10 of their own (`oob_data.OWN_RESULTS`);
   Toro's slots hold cat sounds already sorted by event; Sackboy is silent bar one birdie cue.
 Switching a disc build to the PSN edition: delete `extracted/oob` and rerun `build.sh oob`.
 
@@ -560,6 +561,11 @@ For each cue the longest note's wave is used, because celebrations play 2–17 f
 - **Takes** (`tools/rerig/takes.py`, standard §6 `NAME.K`): more of the character's own clips drawn in turn with the
   pick above, chosen at build time from the extracted clips: the emote, hole-result and results-screen families,
   kept when their face channels match the reaction's mood and they start facing the camera.
+- **Lines with their clip** (standard §6 `extras.voice`): Out of Bounds plays each hole-result clip with its own sg cue
+  (one slot per result, a second take in group 1; `oob_data.RESULTS`/`OWN_RESULTS`). A cue is a sequence of notes with
+  waits and stops, so `oob_data.results` mixes each cue to one wav at its notes' times (`out/voices/oob_cues`).
+  package.py puts those wavs in the reaction's program (9 set won, 10 set lost) and tags each take with its first
+  wav's key; a clip with more cues gets one more take per extra cue, so every line plays with the clip it belongs to.
 
 ## Size (tools/rerig/sizing.py, standard §2)
 profile2 height (ft/in → cm) × HST's metres per cm by sex, × game factor 1.0123 that gives pc16 Gloria (5'4") HST's
@@ -597,6 +603,9 @@ Per character, takes skipped because that actor's line says something else (`SKI
 | 14 S. Maruyama | (0,23) (0,27) (1,10) | "Not too bad.", "Okay.", "Could be worse." |
 | 15 Alex | (0,40) | "Too short?" |
 | 16 Gloria | (0,7) | "One, two!" |
+
+Alex's whiff slots are a drawn-out sigh of a line, not a reaction to a miss (user, 2026-10-26): her program 4 is her
+effort grunts instead (`oob_data.WHIFF_GRUNT`).
 
 Not checked by ear: the transcripts give the words, not the tone; grunts and one-word lines ("Oh!", "Huh?") were
 taken by slot. Some banks reuse one wave in two slots (Anya's "Fly!"); `voices()` keeps it once.

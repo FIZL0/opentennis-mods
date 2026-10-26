@@ -10,6 +10,7 @@ import os
 import re
 import struct
 import sys
+import wave
 
 import numpy as np
 
@@ -118,9 +119,10 @@ def heights():
 # ---- voices ---------------------------------------------------------------------------------------------------
 
 def sgxd(path):
-    """{(group, index): (cue name, [(wave, semitones)])}, plus each wave's sample count. A SEQD note is
-    `d0|d2, n, n BCD digits` = program*128 + key; the RGND region with that key gives the wave and its root note
-    (shift = key - root + fine/128 semitones; tools/audio.py writes the shifted rate into the exported wav)."""
+    """{(group, index): (cue name, [(wave, semitones, ms, stop ms or None)])}, plus each wave's sample count. A SEQD
+    note is `d0, n, n BCD digits` = program*128 + key (`d2` the same stops it); the RGND region with that key gives
+    the wave and its root note (shift = key - root + fine/128 semitones; tools/audio.py writes the shifted rate into
+    the exported wav). `f1, n, n BCD digits` waits that many ms (the cue header's tick rate is 1000)."""
     d = open(path, "rb").read()
     u = lambda o: struct.unpack_from("<I", d, o)[0]
     ch, o = {}, 0x10
@@ -144,15 +146,25 @@ def sgxd(path):
             h = struct.unpack_from("<5I", d, o)
             body = d[o + 20:o + 20 + h[4]]
             name = d[h[1]:d.find(b"\0", h[1])].decode() if 0 < h[1] < len(d) else "?"
-            notes, k = [], 0
+            notes, k, ms, on = [], 0, 0, {}
             while k < len(body):
                 n = body[k + 1] if k + 1 < len(body) else 0
-                if body[k] in (0xd0, 0xd2) and 1 <= n <= 2 and body[k + 2:k + 2 + n].hex().isdigit():
-                    p, key = divmod(int(body[k + 2:k + 2 + n].hex()), 128)
+                bcd = body[k + 2:k + 2 + n].hex() if 1 <= n <= 2 else ""
+                if body[k] == 0xf1 and bcd.isdigit():
+                    ms += int(bcd)
+                    k += 2 + n
+                elif body[k] == 0xd2 and bcd.isdigit():
+                    if int(bcd) in on:
+                        i_ = on.pop(int(bcd))
+                        notes[i_] = notes[i_][:3] + (ms,)
+                    k += 2 + n
+                elif body[k] == 0xd0 and bcd.isdigit():
+                    p, key = divmod(int(bcd), 128)
                     rg = next((x for x in (progs[p] if p < len(progs) else [])
                                if (x[6] & 0xff) <= key <= (x[6] >> 8 & 0xff)), None)
                     if rg:
-                        notes.append((rg[13], key - (rg[7] & 0xff) + (rg[7] >> 8 & 0xff) / 128))
+                        on[int(bcd)] = len(notes)
+                        notes.append((rg[13], key - (rg[7] & 0xff) + (rg[7] >> 8 & 0xff) / 128, ms, None))
                     k += 2 + n
                 else:
                     k += 1
@@ -190,8 +202,7 @@ MISHIT = [(0, 12), (0, 14), (1, 15)]
 WHIFF = [(0, 38), (0, 13)]
 WON = [(0, 28), (0, 37), (1, 8), (0, 27)]
 LOST = [(0, 29), (0, 40), (0, 22), (0, 18), (0, 23), (0, 16)]
-SET_WON = [(0, 31), (0, 33), (1, 11), (1, 13), (0, 30), (1, 10)]
-SET_LOST = [(1, 9), (0, 29), (0, 25), (0, 24)]
+SET_LOST = [(0, 25), (0, 24)]  # the hole results come first, as the cues of their clips (RESULTS)
 # takes that say something else in that actor's script (transcripts in notes/oob.md "Voice lines")
 SKIP = {0: {(0, 7), (0, 37), (0, 40)}, 1: {(0, 40)}, 2: {(0, 29)}, 5: {(0, 33)}, 8: {(0, 12)}, 10: {(0, 30), (1, 10)},
         11: {(0, 12), (0, 30)}, 12: {(0, 16), (0, 37)}, 14: {(0, 23), (0, 27), (1, 10)}, 15: {(0, 40)}, 16: {(0, 7)},
@@ -199,7 +210,61 @@ SKIP = {0: {(0, 7), (0, 37), (0, 40)}, 1: {(0, 40)}, 2: {(0, 29)}, 5: {(0, 33)},
 # The PSN edition's guests (pc17-19) keep the 58 slots, but Kratos's hole results are in a group 10 of their own
 # (his (0,29)-(0,34) and (1,9)-(1,14) are empty): the big wins and the curse at the fates, by transcript. Toro's
 # slots hold cat sounds already sorted by event; Sackboy is silent bar one birdie cue, as in LittleBigPlanet.
-EXTRA = {17: {9: [(10, 2), (10, 4), (10, 14), (10, 12)], 10: [(10, 10)]}}
+EXTRA = {}
+# whiffs that grunt instead (user 2026-10-26: Alex's startled lines are her "Dear, dear, dear")
+WHIFF_GRUNT = {15}
+# The hole-result clips ga_pcNN_<suffix> and the cues the game plays with them: the slot (0,29)-(0,33) of the clip's
+# result and its second take (1,9)-(1,13) (the DLC banks name the slots BOGY/PAR/BIRDIE/BIRDIE_R/EAGLE; each cue's
+# notes are timed to its clip). Kratos's are in his group 10: the timed result cue (named Bogy, Par, Birdie, Birdie_R,
+# Eagle_1) and his two lines of that result (49A-51A, 52A-54A, as the others' slots are named); Toro's in group 10 by
+# name. The bogey goes with the lost game (program 10), the rest with the won (9). Every cue is used: a clip with two
+# plays once per cue (package.py), each saying its own (standard §6 `extras.voice`).
+RESULTS = {"bo_r00": [(0, 29), (1, 9)], "pa_r00": [(0, 30), (1, 10)], "bi_r00": [(0, 31), (1, 11)],
+           "bi_r01": [(0, 32), (1, 12)], "ea_r00": [(0, 33), (1, 13)]}
+OWN_RESULTS = {17: {"bo_r00": [(10, 5), (10, 0), (10, 10)], "pa_r00": [(10, 6), (10, 1), (10, 11)],
+                    "bi_r00": [(10, 7), (10, 2), (10, 12)], "bi_r01": [(10, 8), (10, 13)],
+                    "ea_r00": [(10, 9), (10, 4), (10, 14)]},
+               18: {"bo_r00": [(10, 0)], "pa_r00": [(10, 1)], "bi_r00": [(10, 2)], "bi_r01": [(10, 3)], "ea_r00": [(10, 4)]}}
+CUES = "out/voices/oob_cues"
+
+
+def _mix(notes, wd, dst):
+    """A cue's notes, each from its ms (to its stop, if any), summed into one 44.1 kHz 16-bit wav (peak-limited)."""
+    parts = []
+    for w, _, ms, stop in notes:
+        with wave.open(os.path.join(wd, f"{w + 1:03d}.wav")) as f:
+            rate, x = f.getframerate(), np.frombuffer(f.readframes(f.getnframes()), "<i2").astype(np.float32)
+            if f.getnchannels() > 1:
+                x = x.reshape(-1, f.getnchannels()).mean(1)
+        x = np.interp(np.arange(0, len(x) / rate, 1 / 44100) * rate, np.arange(len(x)), x)  # the wav's true rate
+        a = round(ms * 44.1)
+        parts.append((a, x[:round(stop * 44.1) - a] if stop is not None else x))
+    out = np.zeros(max(a + len(x) for a, x in parts), np.float32)
+    for a, x in parts:
+        out[a:a + len(x)] += x
+    out *= min(1.0, 32767 / max(1.0, float(np.abs(out).max())))
+    os.makedirs(os.path.dirname(dst), exist_ok=True)
+    with wave.open(dst, "wb") as f:
+        f.setnchannels(1), f.setsampwidth(2), f.setframerate(44100)
+        f.writeframes(out.astype("<i2").tobytes())
+    return dst
+
+
+def results(pc):
+    """{clip: [wav]}: each hole-result clip's cues (RESULTS), mixed whole (_mix) into out/voices/oob_cues/pcNN/;
+    a cue with no note (Sackboy's bar the birdies) or one that repeats an earlier cue note for note is left out."""
+    path, wd = _bank(pc, "sg")
+    cues, _ = sgxd(path)
+    out, seen = {}, set()
+    for suffix, slots in OWN_RESULTS.get(pc, RESULTS).items():
+        for sl in slots:
+            notes = cues.get(sl, ("", []))[1]
+            if not notes or tuple(notes) in seen:
+                continue
+            seen.add(tuple(notes))
+            dst = _p(CUES, f"pc{pc:02d}/{sl[0]}_{sl[1]}.wav")
+            out.setdefault(f"ga_pc{pc:02d}_{suffix}", []).append(dst if os.path.exists(dst) else _mix(notes, wd, dst))
+    return out
 # HST program 5, the cry of a player the ball hits (one key): golf has no such event, so per actor one short take of
 # the English ga_ev/ga_sg/ga_vs banks (bank/wave) picked by transcript: a pain word first ('Ouch!', 'Ow'), else a
 # pained yelp ('Ugh!', 'Gah!', 'Wah!', うっ), else a startled 'Ah!'/'Oh!'; a wave other actors share is never one
@@ -232,28 +297,33 @@ def voices(pc):
             name, notes = cues.get(sl, ("", []))
             if not notes or "dummy" in name:
                 continue
-            w, _ = max(notes, key=lambda n: samples[n[0]])
+            w = max(notes, key=lambda n: samples[n[0]])[0]
             f = os.path.join(wd, f"{w + 1:03d}.wav")
             if os.path.exists(f) and f not in out:  # some banks reuse one wave for two slots
                 out.append(f)
         return out
 
-    prog = {0: files(SHOUT), 1: files(STROKE), 2: files(MISHIT), 3: files(SHOUT), 4: files(WHIFF),
-            5: hit_cry(pc), 7: files(WON), 8: files(LOST), 9: files(SET_WON), 10: files(SET_LOST)}
+    res = results(pc)
+    prog = {0: files(SHOUT), 1: files(STROKE), 2: files(MISHIT), 3: files(SHOUT),
+            4: files(SHOUT if pc in WHIFF_GRUNT else WHIFF),
+            5: hit_cry(pc), 7: files(WON), 8: files(LOST),
+            9: [w for c, ws in res.items() if not c.endswith("bo_r00") for w in ws],
+            10: [w for c, ws in res.items() if c.endswith("bo_r00") for w in ws] + files(SET_LOST)}
     for p, slots in EXTRA.get(pc, {}).items():
         prog[p] += [f for f in files(slots) if f not in prog[p]]
     why = {0: "sg (0,6)/(1,3): the effort grunts ('Hah!', 'Hup!'; the shortest line in every bank)",
            1: "sg (0,8)/(0,7)/(0,9)/(0,10): the shot shouts ('Hya!', 'Go!', 'Fly!', 'That's it!')",
            2: "sg (0,12)/(0,14)/(1,15): 'Oops!', 'Whoops!', 'No!'",
            3: "the effort grunts of program 0 (no dive in golf)",
-           4: "sg (0,38)/(0,13): 'Huh?', 'What?'",
+           4: "the effort grunts of program 0 (WHIFF_GRUNT)" if pc in WHIFF_GRUNT else "sg (0,38)/(0,13): 'Huh?', 'What?'",
            5: f"{HIT.get(pc)}: no hit-by-the-ball line in golf; the actor's most pained short take (HIT)",
            7: "sg (0,28)/(0,37)/(1,8)/(0,27): the holed-putt lines ('Yes!', 'It's in!', 'I did it!')",
            8: "sg (0,29) the disaster hole result (e.g. 'No! That was awful!') and (0,40)/(0,22)/(0,18)/(0,23)/(0,16) "
               "the missed-shot lines ('Aw, shoot!', 'Oh no!', 'What a shame!')",
-           9: "the big-win hole results (0,31)/(0,33)/(1,11)/(1,13) and par (0,30)/(1,10) ('I'm the best!')",
-           10: "the disaster hole result's takes (1,9)/(0,29) and the resigned (0,25)/(0,24) ('Next time!', "
-               "'Oh, what a pity')",
+           9: "the birdie, eagle and par results' whole cues as the game times them to their clips (RESULTS), "
+              "each the line of its own take",
+           10: "the bogey result's whole cues (RESULTS), each the line of its take, then the resigned (0,25)/(0,24) "
+               "('Next time!', 'Oh, what a pity')",
            6: "no partner call in golf; the taunts (ga_ya, lines 140-150) heckle the opponent, not a partner"}
     why = {p: w + " (sorted by what the lines say: notes/oob.md 'Voice lines')" if p != 6 else w for p, w in why.items()}
     prog = {p: f for p, f in prog.items() if f}

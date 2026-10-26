@@ -97,8 +97,9 @@ def gag_voices(n, dst):
 
 
 # HST voice program -> keys it plays (standard §5); reactions 7-10 take any number (HST's own draw reaches keys 0-2,
-# 0-4, 0-1, 0-1; a mod's further takes are there for a player that cycles through all of them), capped at 8
-KEYS = {0: 3, 1: 5, 2: 3, 3: 3, 4: 2, 5: 1, 6: 5, 7: 8, 8: 8, 9: 8, 10: 8}
+# 0-4, 0-1, 0-1; a mod's further takes are there for a player that cycles through all of them), capped at 16
+KEYS = {0: 3, 1: 5, 2: 3, 3: 3, 4: 2, 5: 1, 6: 5, 7: 16, 8: 16, 9: 16, 10: 16}
+REACTION_PROGRAM = {"re_gu": 7, "re_di": 8, "re_gu_set": 9, "re_di_set": 10}
 # Rackets (M1r). No source game has a per-character racket (Get a Grip's Racket_param has no character column,
 # notes/getagrip.md; the golf games have none), so each mod gets the one of the 24 there are whose frame is nearest
 # its outfit's colours (colour.py): Get a Grip's 10 models (parts/racket: racket000-008 = items Racket_0N0-0N2, which
@@ -195,9 +196,10 @@ def data(game):
         mp = d.MAP[game] if isinstance(d.MAP, dict) and game in d.MAP else d.MAP
         return dict(stats=lambda: d.stats(game), map=mp, style=lambda n: d.style(game, n),
                     voices=lambda n: d.voices(game, n), reactions=lambda n: d.reactions(game, n),
-                    faces=lambda n: d.faces(game, n), name=GAME_NAME[game].split(" (")[0])
+                    faces=lambda n: d.faces(game, n), results=lambda n: {}, name=GAME_NAME[game].split(" (")[0])
     return dict(stats=d.stats, map=d.MAP, style=d.style, voices=d.voices, reactions=d.reactions,
-                faces=getattr(d, "faces", lambda n: None), name=GAME_NAME[game].split(" (")[0])
+                faces=getattr(d, "faces", lambda n: None), results=getattr(d, "results", lambda n: {}),
+                name=GAME_NAME[game].split(" (")[0])
 
 
 def cast(game, D, tp):
@@ -241,6 +243,9 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
         manifest["face"] = "texture"
     elif game.startswith("opentee"):
         manifest["face"] = "none"
+    prog, vwhy = more_voices.fill(game, n, *D["voices"](n))
+    prog = {p: fs[:KEYS.get(p, 5)] for p, fs in prog.items()}
+    res = D["results"](n)  # {source clip: [the lines the game plays with it]}
     r = D["reactions"](n)
     if r and r[0] and r[1]:
         src, clips, whys = r
@@ -249,18 +254,29 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
             pin = seq[-1] == "!" if seq and isinstance(seq[-1], str) else False
             seq = [x for x in seq if x != "!"]
             ani = os.path.join(HST_ANI, f"PC{donor['index']:02d}ANI.XB/data/taguchi/MtPc{donor['index']:02d}/{hst_name.replace('re_', f're_pc{donor['index']:02d}_')}.ANI2")
-            plan.append((hst_name, seq, motions.ani_frames(ani) if os.path.exists(ani) else None, PIN.get(game, False) or pin))
-            # the reaction's further takes (takes.py; the game draws one in turn as it starts), timed as the reaction
-            base = plan[-1]
-            for k, extra in enumerate(takes.takes(game, n).get(hst_name, []), 1):
-                whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name} (takes.py)"
-                plan.append((f"{hst_name}.{k}", [extra], base[2], base[3]))
+            frames, pin = motions.ani_frames(ani) if os.path.exists(ani) else None, PIN.get(game, False) or pin
+            # the reaction's further takes (takes.py; the game draws one in turn as it starts), timed as the reaction;
+            # a clip the source game plays with lines of its own says them (§6 `extras.voice`), one take per line:
+            # its first in its place, the others as more takes after
+            have = prog.get(REACTION_PROGRAM[hst_name], [])
+            first, again = [], []
+            for s in [seq] + [[x] for x in takes.takes(game, n).get(hst_name, [])]:
+                ws = [w for w in res.get(s[0], []) if w in have]
+                first.append((s, ws[0] if ws else None))
+                again += [(s, w) for w in ws[1:]]
+            for k, (s, w) in enumerate(first + again):
+                name = f"{hst_name}.{k}" if k else hst_name
+                if k:
+                    whys[name] = f"take {k + 1} of {hst_name} (takes.py{', again for its other line' if k >= len(first) else ''})"
+                if w:
+                    whys[name] = f"{whys.get(name, '')} saying its own line, voice key {have.index(w)}".lstrip()
+                plan.append((name, s, frames, pin, {"voice": have.index(w)} if w else {}))
             # Out of Bounds' lobby avatars sit on the furniture: one more lost-point take sits down on the lobby's
             # piano bench, popped in under them while it plays (standard §6 `extras.seat`)
             if game == "oob" and hst_name == "re_di":
-                k = len(takes.takes(game, n).get(hst_name, [])) + 1
+                k = len(first + again)
                 whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name}: sits down on seat.glb, then stands up"
-                plan.append((f"{hst_name}.{k}", ["avatar_aba00_si", "~"], base[2], True,
+                plan.append((f"{hst_name}.{k}", ["avatar_aba00_si", "~"], frames, True,
                              {"seat": "seat.glb", "arms_from": f"rslt_wait_pc{n:02d}"}))
         hz = HZ.get(game, 60)
         held = motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan, rate=hz / 60)
@@ -276,7 +292,6 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
         ch = json.load(open(sz))["characters"].get(f"pc{n:02d}")
         if ch:
             manifest["size_why"] = f"{ch['why']}; head × {ch['head_factor']:.4f} about the neck ({ch['head_why']})"
-    prog, vwhy = more_voices.fill(game, n, *D["voices"](n))
     manifest["voice"] = "voice/"
     manifest["voice_counts"] = {str(k): v for k, v in voices(prog, mod).items()}
     manifest["voice_why"] = {str(k): v for k, v in vwhy.items()}

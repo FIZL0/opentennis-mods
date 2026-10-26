@@ -38,8 +38,8 @@ def apply(mod, manifest):
     if os.path.exists(path):
         g, b = glb.read(path)
         for a in g.get("animations", []):
-            if (a.get("name") in claps or a.get("extras", {}).get("clap")) and a.get("extras") != OFF:
-                a["extras"] = OFF
+            if (a.get("name") in claps or a.get("extras", {}).get("clap")) and a.get("extras", {}).get("racket") is not False:
+                a["extras"] = {**{k: v for k, v in a.get("extras", {}).items() if k != "clap"}, **OFF}
                 changed = True
         if changed:
             js = json.dumps(g, separators=(",", ":")).encode()

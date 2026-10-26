@@ -25,8 +25,8 @@ sys.path.insert(0, os.path.join(ROOT, "tools"))
 import voice_candidates as vc  # noqa: E402
 
 CACHE = os.path.join(ROOT, "out/voice_candidates/.transcripts.json")
-# takes per program: HST's keys for 0-5 (standard §5), 7-10 up to 8
-MAX = {0: 3, 1: 5, 2: 3, 3: 3, 4: 2, 5: 1, 7: 8, 8: 8, 9: 8, 10: 8}
+# takes per program: HST's keys for 0-5 (standard §5), 7-10 up to 16
+MAX = {0: 3, 1: 5, 2: 3, 3: 3, 4: 2, 5: 1, 7: 16, 8: 16, 9: 16, 10: 16}
 N = {"fore": 24, "oob": 17, "opentee2": 21}
 
 # whole-line phrases per program (lower case, punctuation stripped, a phrase may repeat: "go go"), and the longest
