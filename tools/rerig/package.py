@@ -5,8 +5,8 @@ python3 tools/rerig/package.py [game…]     (after batch.py; default every game
 Files are hard links into out/ (game data: never commit). Every game gets: costumes; a same-sex donor with the
 nearest Bip01 height; the face (morph, or face.json for the PSP texture swaps); voices sorted into HST programs; the
 source stats ranked onto TParam as params.override (gag_stats.overrides; needs HST's TParam.csv: HST_TPARAM or
-../opentennis/context/xb) with ai_row by play style where the game has one; the game's own point/set reactions
-as motions.glb (motions.py; needs ../opentennis/context/xb/PCANI for the donor clip lengths; golf roots held,
+../opentennis/fixtures/xb) with ai_row by play style where the game has one; the game's own point/set reactions
+as motions.glb (motions.py; needs ../opentennis/fixtures/xb/PCANI for the donor clip lengths; golf roots held,
 PIN); and a racket in its outfit's colours (pick_racket). Get a Grip's data is
 in gag_stats.py, the golf games' in fore_data.py / oob_data.py / opentee_data.py. Handedness: a golf mod whose
 costumes wear a glove on the left hand is left-handed (glove hand = racket hand, standard §6 `hand`) and ships its
@@ -108,7 +108,7 @@ GAG_RACKETS = ["00", "01", "02", "03", "04", "05", "06", "07", "08", "50"]
 GAG_PAINTED = ["01", "02", "03", "05", "06", "07"]  # one-colour frames, for the tint
 GAG_RACKET = os.path.join(ROOT, "out/models/getagrip/parts/racket/racket{}.glb")
 GAG_GRIP = os.path.join(ROOT, "out/rerig/getagrip/pc00_emi/pc00_emi_set3.glb")
-HST_RACKET = os.path.join(ROOT, "out/models/hst/pc{:02d}_c00.glb")  # hst-gltf hst ../opentennis/context/xb out/models/hst
+HST_RACKET = os.path.join(ROOT, "out/models/hst/pc{:02d}_c00.glb")  # hst-gltf hst ../opentennis/fixtures/xb out/models/hst
 HST_NAMES = ["Ashley", "Cody", "Jun", "Kaito", "Momoko", "JJ", "Carol", "Big Chief", "Miranda", "Kent", "Lola", "Will",
              "Gloria", "Suzuki"]
 HST_SAME = {"gloria": 12, "suzuki": 13}  # the same character in HST: her/his own racket there
@@ -125,7 +125,7 @@ def racket_hist(r):
         else:
             p = HST_RACKET.format(r[1])
             if not os.path.exists(p):
-                sys.exit(f"{p} missing: build HST's models from your disc (hst-gltf hst ../opentennis/context/xb out/models/hst)")
+                sys.exit(f"{p} missing: build HST's models from your disc (hst-gltf hst ../opentennis/fixtures/xb out/models/hst)")
             _hists[r] = colour.hist(*colour.samples(p, {"racket"}, head=True))
     return _hists[r]
 
@@ -342,6 +342,9 @@ def main():
                 pool = [c for c in hst if c["sex"] == gag_sex[game][n][0] and c["model_type"] in sizing.STANDARD_BODY]
                 why = f"nearest Bip01 height among HST's standard-body {'women' if gag_sex[game][n][0] == 'f' else 'men'}"
             donor = min(pool, key=lambda c: abs(c["bip01_height"] - h))
+            if sizing.GLORIA.get(game) == n:  # the game's Gloria is HST's Gloria: her own body, whatever the sizing
+                donor = next(c for c in hst if c["name"] == "Gloria")
+                why = "HST's Gloria herself"
             manifest = {"standard": 1, "id": f"{game}_pc{n:02d}_{name}", "name": name.replace("_", " ").title(),
                         "source": f"{GAME_NAME[game]} pc{n:02d}",
                         "costumes": [f"model/{os.path.basename(c)}" for c in costumes],

@@ -59,9 +59,12 @@ def ranks(values):
 
 
 def hst_xb(root):
-    """HST's unpacked disc: build.sh's out/files/hst (from the HST disc in iso/), else the remaster's context/xb."""
-    p = os.path.join(root, "out/files/hst")
-    return p if os.path.isdir(p) else os.path.join(root, "../opentennis/context/xb")
+    """HST's unpacked disc: build.sh's out/files/hst (from the HST disc in iso/), else the remaster's fixtures/xb
+    (context/xb before it moved there)."""
+    for p in [os.path.join(root, "out/files/hst"), os.path.join(root, "../opentennis/fixtures/xb")]:
+        if os.path.isdir(p):
+            return p
+    return os.path.join(root, "../opentennis/context/xb")
 
 
 def find_tparam(root):

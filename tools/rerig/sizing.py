@@ -8,6 +8,11 @@ has no Gloria but is Open Tee 2's first ten at the same sizes, so it takes their
 or the other games (its Brad is not Get a Grip's) and keeps its own model scale (factor 1: the same engine and units
 as HST's MDLs). One factor per game keeps the source's relative heights; per-sex metres-per-cm keeps HST's women/men
 proportions.
+Out of Bounds measures that height head to foot instead (top of the mesh, with HST's metres per cm of top height and
+Gloria's top for the factor; each character's Bip01 then follows from its own proportions and head factor): its
+cartoon bodies (Suzuki, Fernando, Felipe, Bloom, Maruyama, Nick) have short legs under big heads, so a Bip01 sized
+from the cm stood them a head taller than the stock roster (user 2026-10-24). Its Suzuki is HST's Suzuki too, so he
+takes HST's Suzuki's top height, as Gloria sets the factor.
 Head: chibi games (Get a Grip, Open Tee 2) shrink each character's head about the neck by its own factor: the game's
 head share of the way from 1 to the factor that would bring that character's head ratio (neck joint to the top of the
 head mesh, over Bip01 height; the smallest over its costumes, so a hat doesn't count) to the median of HST's standard
@@ -38,6 +43,10 @@ GLORIA = {"getagrip": 13, "oob": 16, "opentee2": 20}
 # games whose whole cast shares one skeleton: everyone takes Gloria's head factor, since the per-character one
 # measures hair too (Taiga's spiky hair got him 0.50 against Brad's 0.62, the smallest head on screen; user 2026-10-12)
 ONE_HEAD = {"getagrip"}
+# games sized head to foot (top of the mesh) rather than by Bip01 (opentennis B663)
+TOP_SIZED = {"oob"}
+# characters on HST's disc too, besides Gloria, who take their HST twin's top height outright: {game: {pc: HST name}}
+TWINS = {"oob": {13: "Suzuki"}}
 
 
 def head_ratio(path):
@@ -91,10 +100,11 @@ def heights(path):
     return -B["Bip01"][1, 3], -neck[1, 3], top
 
 
-def hst():
-    """HST's metres per cm by sex ('f'/'m') and target head ratio, from standard/hst_skeleton.json."""
+def hst(key="bip01_height"):
+    """HST's metres per cm by sex ('f'/'m') and target head ratio, from standard/hst_skeleton.json; `key` "top_height"
+    gives metres of head-to-foot height per cm instead of Bip01."""
     cs = [c for c in json.load(open(os.path.join(ROOT, "standard/hst_skeleton.json")))["characters"] if c["model_type"] in STANDARD_BODY]
-    k = {s: float(np.median([c["bip01_height"] / c["height_cm"] for c in cs if c["sex"] == s])) for s in "fm"}
+    k = {s: float(np.median([c[key] / c["height_cm"] for c in cs if c["sex"] == s])) for s in "fm"}
     return k, float(np.median([c["head_ratio"] for c in cs]))
 
 
@@ -144,16 +154,19 @@ def plan(game, models):
     src = source(game)
     if not src:
         return None
-    k, want = hst()
+    top = game in TOP_SIZED
+    key, what = ("top_height", "top") if top else ("bip01_height", "Bip01")
+    k, want = hst(key)
+    cast = json.load(open(os.path.join(ROOT, "standard/hst_skeleton.json")))["characters"]
     raw, how = {}, {}
     for n in models:
         sex, cm, why, *sc = src.get(n, (None, None, "not in the game's tables"))
         if cm and sex in k:
             raw[n] = k[sex] * cm
-            how[n] = f"{why}: {cm:g} cm {'woman' if sex == 'f' else 'man'} × HST {k[sex]:.6f} m/cm"
+            how[n] = f"{why}: {cm:g} cm {'woman' if sex == 'f' else 'man'} × HST {k[sex]:.6f} m/cm of {what} height"
         else:
-            raw[n] = min(model_height(p) for p in models[n])
-            how[n] = f"{why}; no height in cm in the data: the model's own Bip01 height {raw[n]:.4f} m"
+            raw[n] = min(heights(p)[2] if top else model_height(p) for p in models[n])
+            how[n] = f"{why}; no height in cm in the data: the model's own {what} height {raw[n]:.4f} m"
             if sc:  # the game's own body scale of a shared skeleton (Open Tee face.csv `scale`)
                 raw[n] *= sc[0]
                 how[n] += f" × the game's scale {sc[0]:g}"
@@ -162,14 +175,14 @@ def plan(game, models):
     c = 1.0
     if game in GLORIA:
         n = GLORIA[game]
-        disc = next(x for x in json.load(open(os.path.join(ROOT, "standard/hst_skeleton.json")))["characters"] if x["name"] == "Gloria")
-        c = disc["bip01_height"] / raw[n]
-        why_c = f"pc{n:02d} Gloria's Bip01 to HST's Gloria {disc['bip01_height']:g} m"
+        disc = next(x for x in cast if x["name"] == "Gloria")
+        c = disc[key] / raw[n]
+        why_c = f"pc{n:02d} Gloria's {what} to HST's Gloria {disc[key]:g} m"
         # chibi heads: the share that also brings her head-to-foot to HST's Gloria's
         B, N, T = min((heights(p) for p in models[n]), key=lambda h: h[2] / h[0])
         f = (disc["top_height"] * B / disc["bip01_height"] - N) / (T - N)
         r = min(head_ratio(p) for p in models[n])
-        if f < 1 and r > want:
+        if not top and f < 1 and r > want:
             share = (1 - f) / (1 - want / r)
             why_c += f", head share {share:.3f} so her top is HST's Gloria's {disc['top_height']:g} m"
     sizes = {n: (raw[n] * c, f"{how[n]} × game factor {c:.4f} ({why_c})") for n in models}
@@ -182,4 +195,13 @@ def plan(game, models):
     if game in ONE_HEAD:
         n = GLORIA[game]
         heads = {m: (heads[n][0], f"one skeleton for the cast: pc{n:02d} Gloria's factor ({heads[n][1]})") for m in models}
+    for n, name in TWINS.get(game, {}).items():
+        if n in models:
+            t = next(x for x in cast if x["name"] == name)[key]
+            sizes[n] = (t, f"HST's {name} too: HST's {name}'s {what} height {t:g} m")
+    if top:  # head to foot -> Bip01: the costume without a hat (smallest top / Bip01), its head shrunk about the neck
+        for n in models:
+            B, N, T = min((heights(p) for p in models[n]), key=lambda h: h[2] / h[0])
+            h = sizes[n][0] * B / (N + heads[n][0] * (T - N))
+            sizes[n] = (h, f"{sizes[n][1]}; top {sizes[n][0]:.4f} m -> Bip01 {h:.4f} m by its own proportions and head factor")
     return sizes, heads, {"hst_m_per_cm": k, "game_factor": c, "game_factor_why": why_c, "head_ratio_hst": want, "head_share": share}
