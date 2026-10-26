@@ -392,11 +392,22 @@ def rerig(src_path, out_path, donor=None, motions=None, height=None, head=1.0):
     src_new = {j: idx[n] for j, n in core_of.items()}
     used = set(J)
 
+    def helper(i):  # a bare pivot `X|lv0` between joint X and its attachments (Out of Bounds' later costumes)
+        n, p = nodes[i], parent.get(i)
+        return (p is not None and "mesh" not in n and "extras" not in n and n.get("children")
+                and norm(n.get("name", "")).startswith(norm(nodes[p].get("name", "")) + "|"))
+
     def keep(i):  # new node for source node i (extras), created on demand under its nearest kept ancestor
         if i in src_new:
             return src_new[i]
         if i in above or i in skinned_mesh:
             return None
+        if helper(i):
+            # folded into X: its children hang off X directly, as on the costumes without it. Clips animate those
+            # children relative to X (the shared motions.glb), so a pivot left between them adds its own rotation
+            # on top (the eyes spun into the skull). It never moves on its own, so weights on it go to X unchanged.
+            src_new[i] = keep(parent[i])
+            return src_new[i]
         p = parent.get(i)
         while p is not None and keep(p) is None:
             p = parent.get(p)
@@ -436,7 +447,8 @@ def rerig(src_path, out_path, donor=None, motions=None, height=None, head=1.0):
                 for c in n["extras"]["colliders"]]
 
     # one skin: core joints then every kept skinned extra
-    joints = [idx[n] for n in order] + sorted({src_new[j] for j in SB if j in src_new and j not in core_of})
+    joints = [idx[n] for n in order]
+    joints += sorted({src_new[j] for j in SB if j in src_new and src_new[j] is not None and src_new[j] not in joints})
     jpos = {k: t for t, k in enumerate(joints)}
     fallback = jpos[idx["Bip01Pelvis"]]
     ibm = np.stack([np.linalg.inv(M[k]).T for k in joints])
