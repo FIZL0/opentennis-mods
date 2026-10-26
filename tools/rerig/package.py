@@ -18,6 +18,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -254,11 +255,22 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
             for k, extra in enumerate(takes.takes(game, n).get(hst_name, []), 1):
                 whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name} (takes.py)"
                 plan.append((f"{hst_name}.{k}", [extra], base[2], base[3]))
+            # Out of Bounds' lobby avatars sit on the furniture: one more lost-point take sits down on the lobby's
+            # piano bench, popped in under them while it plays (standard §6 `extras.seat`)
+            if game == "oob" and hst_name == "re_di":
+                k = len(takes.takes(game, n).get(hst_name, [])) + 1
+                whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name}: sits down on seat.glb, then stands up"
+                plan.append((f"{hst_name}.{k}", ["avatar_aba00_si", "~"], base[2], True,
+                             {"seat": "seat.glb", "arms_from": f"rslt_wait_pc{n:02d}"}))
         hz = HZ.get(game, 60)
-        motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan, rate=hz / 60)
+        held = motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan, rate=hz / 60)
+        for x, y, z in held.values():
+            # ponytail: the seat's top a fifth of the pelvis height under the sitting pelvis (Y down), under it
+            subprocess.run([sys.executable, os.path.join(ROOT, "tools/oob2gltf/seat.py"), os.path.join(mod, "seat.glb"),
+                            str(-0.8 * y), str(x), str(z)], check=True)
         manifest["motions"] = "motions.glb"
         manifest["motions_why"] = {k: f"{whys.get(k, '')}; {' then '.join(seq)}{', root held on its spot' if pin else ''}, played at {hz} Hz, its own length and at least the donor's clip ({fr} frames)"
-                                   for k, seq, fr, pin in plan}
+                                   for k, seq, fr, pin, *_ in plan}
     sz = os.path.join(ROOT, f"out/rerig/{game}/sizing.json")
     if os.path.exists(sz):
         ch = json.load(open(sz))["characters"].get(f"pc{n:02d}")

@@ -30,6 +30,9 @@ FPS = 60.0
 SKIP = {"ROOTNODE", "pc_locator"}
 
 
+ARMS = ("Clavicle", "UpperArm", "Forearm", "Hand", "Finger")
+
+
 def parents(g):
     return {c: i for i, n in enumerate(g["nodes"]) for c in n.get("children", [])}
 
@@ -120,9 +123,14 @@ def racket_inside(world, named):
 
 
 def make(costume, src, out, clips, rate=1.0):
-    """clips: [(hst_name, [source anims: intro, then an optional loop], frames or None[, pin])]; pin keeps the root's
-    horizontal position at rest. `rate`: source seconds per second played (0.5: a game whose clips are exported at
-    60 Hz but played at 30, Open Tee 2; opentennis B613)."""
+    """clips: [(hst_name, [source anims: intro, then an optional loop], frames or None[, pin[, extras]])]; pin keeps
+    the root's horizontal position at rest; extras go on the animation (standard §6: `seat`, …), except
+    `arms_from`: a source anim whose first frame poses the arms instead (OOB's lobby avatar clips hold them out flat,
+    the lobby lays its own arms over them). A loop of "~" plays
+    the intro, holds its last frame, then plays it backwards to end where it started (sit down, sit, stand up).
+    `rate`: source seconds per second played (0.5: a game whose clips are exported at 60 Hz but played at 30, Open
+    Tee 2; opentennis B613). Returns {hst_name: the root joint's world position (glTF) at the held frame} of the "~"
+    clips."""
     cg, cb = glb.read(costume)
     sg, sb = glb.read(src)
     anims = {a["name"]: a for a in sg["animations"]}
@@ -148,17 +156,27 @@ def make(costume, src, out, clips, rate=1.0):
     fnames = list(dict.fromkeys(t for i in fnodes for t in sg["meshes"][sg["nodes"][i]["mesh"]]["extras"]["targetNames"]))
     face_node = None
 
+    held = {}
     for name, seq, frames, *rest in clips:
         pin = bool(rest and rest[0])
+        extras = dict(rest[1]) if len(rest) > 1 else {}
+        arms = extras.pop("arms_from", None)
+        Sarm = source_worlds(sg, sb, anims[arms], 0.0) if arms else None
+        back = seq[1:] == ["~"]
+        seq = seq[:1] if back else seq
         lens = [length(sg, sb, anims[s]) for s in seq]
         # at least the donor's frames, and the whole intro at its own speed (never squeezed: M1q, golf reactions ran
         # up to 3x fast squeezed into HST's shorter clips)
         n = max(frames, int(round(lens[0] / rate * FPS))) if frames else int(round(sum(lens) / rate * FPS))
+        if back:  # down, at least a second held, back up
+            n = max(n, int(round(2 * lens[0] / rate * FPS)) + int(FPS))
         # frame f of the HST clip -> (source anim, time): the intro, then the loop over and over
         plan = []
         for f in range(n + 1):
             t = f / FPS * rate
-            if t <= lens[0] or len(seq) == 1:
+            if back:
+                plan.append((seq[0], max(0.0, min(t, lens[0], n / FPS * rate - t))))
+            elif t <= lens[0] or len(seq) == 1:
                 plan.append((seq[0], min(t, lens[0])))
             else:
                 plan.append((seq[1], (t - lens[0]) % lens[1]))
@@ -189,7 +207,8 @@ def make(costume, src, out, clips, rate=1.0):
                 pw = wa(p) if p is not None and p in joints_set else W0[p] if p is not None else np.eye(4)
                 s = sidx.get(cnames[j])
                 if s is not None:
-                    d = unit(S[s][:3, :3]) @ unit(S0[s][:3, :3]).T  # rotation only (Open Tee's root scales by 0.01)
+                    Sj = Sarm if arms and any(k in cnames[j] for k in ARMS) else S
+                    d = unit(Sj[s][:3, :3]) @ unit(S0[s][:3, :3]).T  # rotation only (Open Tee's root scales by 0.01)
                     m = np.eye(4)
                     m[:3, :3] = d @ W0[j][:3, :3]
                     m[:3, 3] = (pw @ node_mat(cg["nodes"][j]))[:3, 3]
@@ -233,6 +252,8 @@ def make(costume, src, out, clips, rate=1.0):
                 return Wf[j]
             return w
         through = sum(racket_inside(drawn(f), named) for f in range(len(plan)))
+        if back:
+            held[name] = drawn(n // 2)(root)[:3, 3]
         times = np.arange(n + 1, dtype=np.float32) / FPS
         ti = o.accessor(times, glb.FLOAT, "SCALAR", minmax=True)
         ch, sm = [], []
@@ -252,11 +273,14 @@ def make(costume, src, out, clips, rate=1.0):
                 face_node = o.node(name="face", extras={"targetNames": fnames})
             sm.append({"input": ti, "output": o.accessor(np.array(face, np.float32).ravel(), glb.FLOAT, "SCALAR"), "interpolation": "LINEAR"})
             ch.append({"sampler": len(sm) - 1, "target": {"node": face_node, "path": "weights"}})
-        anim = {"name": name, "channels": ch, "samplers": sm}
         if through > HIDE_FRAMES * len(plan):  # §6 Racket: the game hides it while this clip plays
-            anim["extras"] = {"racket": False}
+            extras["racket"] = False
+        anim = {"name": name, "channels": ch, "samplers": sm}
+        if extras:
+            anim["extras"] = extras
         o.add("animations", anim)
     o.write(out)
+    return held
 
 
 def main():
