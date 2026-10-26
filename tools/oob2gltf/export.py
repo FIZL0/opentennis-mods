@@ -64,6 +64,24 @@ def add_springs(b, root, r):
                 'limit': p[0], 'stiffness': p[1], 'gravity': round(p[2] * p[3], 6), 'damping': p[7], 'oob': p}}
 
 
+def add_colliders(b, root, r):
+    """The .rem's collision ellipsoids (what keeps the hair out of the head, hat and body) as `extras.colliders` on
+    their joints (standard §3c): a row-vector matrix in model space at rest, taken into the joint's own space.
+    Only for models with spring chains (nothing else collides)."""
+    if not r.springs:
+        return
+    world = [None] * len(r.nodes)
+    for i, n in enumerate(r.nodes):  # parents come first
+        world[i] = n['local'] if n['parent'] < 0 else n['local'] @ world[n['parent']]
+    for q in r.prims:
+        if q['shape'] != 0:  # ponytail: boxes/cylinders skipped (only pc10's thighs, for its skirt cloth)
+            continue
+        m = q['matrix'] @ np.linalg.inv(world[q['node']])
+        # row-vector row-major = glTF column-vector column-major
+        b.g['nodes'][root + q['node']].setdefault('extras', {}).setdefault('colliders', []).append(
+            [round(float(x), 6) for x in m.flatten()])
+
+
 def png_bytes(im):
     f = io.BytesIO()
     im.save(f, 'PNG', optimize=False)
@@ -88,6 +106,7 @@ def export_model(pc, costume, out_path):
     b = glb.Builder()
     root = add_skeleton(b, r.nodes)
     add_springs(b, root, r)
+    add_colliders(b, root, r)
     ibm = np.stack([n['inv'] for n in r.nodes])
     ibm[:, :, 3] = [0, 0, 0, 1]  # exact affine (the files carry 1.0000001)
     ibm = ibm.astype(np.float32).reshape(-1, 16)  # a row-vector matrix flattened row-major == glTF column-major

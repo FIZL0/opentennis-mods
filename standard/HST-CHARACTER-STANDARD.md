@@ -98,6 +98,15 @@ Missing keys default to 30, 0.5, 4.9, 0.83. A spring joint whose parent has none
 so a chain never turns the core joint it hangs on. Other keys are ignored (`oob2gltf` keeps the source's raw 16
 words as `oob`). `rerig.py` keeps `extras.spring` on every joint it keeps. Visual only: the sim never sees it.
 
+### 3c. Spring colliders (optional)
+
+`extras.colliders` on any joint: a list of ellipsoids, each a glTF 4×4 matrix (16 numbers, column-major) in that
+joint's space that maps the unit sphere onto the ellipsoid (its scaled axes are the radii, its translation the
+centre). Each step, a spring mass (§3b) that ends up inside one is pushed out to its surface, so hair stays out of
+the head, a hat or the body. An ellipsoid the animated pose itself puts the mass inside is ignored for that mass, so
+a collider never pulls hair off its pose. `oob2gltf` writes the source's ellipsoids on models with spring chains;
+`rerig.py` carries them like the skin.
+
 ## 4. Face
 
 ### 4a. Morph faces (preferred — what HST uses)

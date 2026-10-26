@@ -14,7 +14,8 @@ the right way) with `Bip01RHand`, and the racket, in that gloved hand.
 Joints stay HST's (motions drive them by name). A vertex on joint j moves to j's twin m(j) and keeps its place
 relative to it: v' = S·v + Σ wᵢ (P(m(jᵢ)) − S·P(jᵢ)), S the reflection, P the bind position (0 for a symmetric
 skeleton; rerigged ones are within a few mm). Extra joints pair by mirrored bind position (≤ 1 cm, the L/R-swapped
-name first); one without a twin gets a mirrored copy (`<name>_mirror`, same `extras`, so springs keep swinging).
+name first); one without a twin gets a mirrored copy (`<name>_mirror`, same `extras`, so springs keep swinging). Spring
+colliders (standard §3c) are reflected onto their joint's twin.
 Rigid mesh nodes (PSP heads, on `Bip01Head`) are reflected in their node's space.
 """
 import io
@@ -210,6 +211,16 @@ def mirror(src, dst):
     P = np.array([m[:3, 3] for m in B])
     twin = [k if t is None else t for k, t in enumerate(twin)]  # unused, unpaired (Racket): no vertex to move
     twin = np.array(twin, dtype=np.int64)
+    # collision ellipsoids (standard §3c) reflected with the skin, onto their joint's twin
+    moved = []
+    for k in range(len(joints)):
+        for c in nodes[joints[k]].get("extras", {}).pop("colliders", []):
+            shift = np.eye(4)
+            shift[:3, 3] = P[twin[k]] - S3 @ P[k]  # as the skin's vertices
+            m = np.linalg.inv(B[twin[k]]) @ shift @ S4 @ B[k] @ np.array(c).reshape(4, 4).T
+            moved.append((twin[k], [round(float(x), 6) for x in m.T.flatten()]))
+    for t, c in moved:
+        nodes[joints[t]].setdefault("extras", {}).setdefault("colliders", []).append(c)
 
     done = set()
 

@@ -68,6 +68,8 @@ def stats():
     hl = _help()
     out = {}
     for pc, r in enumerate(_player()):
+        if pc not in hl:  # the table's rows past the cast (no help text): no character to package
+            continue
         h = hl[pc]
         out[pc] = {"name": _profile(pc)[0], **{k: str(v) for k, v in r.items() if k != "_const"},
                    "control": str(round(2 - r["control_spread"], 4)), "help": h,

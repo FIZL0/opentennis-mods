@@ -425,6 +425,15 @@ def rerig(src_path, out_path, donor=None, motions=None, height=None, head=1.0):
     for i in range(len(nodes)):
         if i not in above and i not in skinned_mesh and i not in src_new and (i in SB or "mesh" in nodes[i]):
             keep(i)
+    # collision ellipsoids (standard §3c): placed like the skin's vertices (game space, shrunk head, overall size),
+    # then into the new joint's space
+    for i, n in enumerate(nodes):
+        if "colliders" in n.get("extras", {}) and keep(i) is not None:
+            k = keep(i)
+            A = S @ (H if in_head(i) else np.eye(4)) @ G @ W[i]
+            out.g["nodes"][k].setdefault("extras", {})["colliders"] = [
+                [round(float(x), 6) for x in (np.linalg.inv(M[k]) @ A @ np.array(c).reshape(4, 4).T).T.flatten()]
+                for c in n["extras"]["colliders"]]
 
     # one skin: core joints then every kept skinned extra
     joints = [idx[n] for n in order] + sorted({src_new[j] for j in SB if j in src_new and j not in core_of})
