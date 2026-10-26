@@ -775,7 +775,16 @@ ROOMS = {2: (26, 23, 8, 10), 16: (12, 24, 11, 7), 17: (8, 20, 14, 6.4)}
 # program animates it (its data has no track for it), so the speeds are set by eye: each layer drifts its own way, the
 # additive caustics against the sea under them, so the ripples shimmer rather than slide as one sheet.
 SCROLL = {4: {"c04_resort_water01@water": [0.006, 0.004], "c04_resort_water02@water": [-0.004, 0.007],
-              "c04_resort_waterAdd": [-0.009, -0.005], "c04_resort_waterAdd@add": [-0.009, -0.005]}}
+              "c04_resort_waterAdd": [-0.009, -0.005], "c04_resort_waterAdd@add": [-0.009, -0.005]},
+          # the ditch beside the paddies drifts (12.5 m a repeat)
+          3: {"c03_denen_water01": [0.004, 0.003]},
+          # the falls pour down off the cliffs (v grows downwards, 6-14 m a repeat) into the river, which runs past the
+          # court away from them (-z, +v); the mist at their foot rises (its texture tiles only in v)
+          6: {"c06_canada_water01": [0.0, 0.03], "c06_canada_water01@add": [0.012, 0.045],
+              "c06_canada_water02": [0.0, -0.25], "c06_canada_water02@add": [0.015, -0.33],
+              "c06_canada_fog01@add": [0.0, 0.004]},
+          # the river (20 m a repeat) and its sparkles (25 m) over it, each its own way
+          13: {"c13_hiyoko_water": [0.0, 0.02], "c13_hiyoko_light01@add": [0.008, 0.028]}}
 
 
 def room_flyover(x, z, h, low):
