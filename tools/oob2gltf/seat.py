@@ -2,7 +2,10 @@
 lobby avatars sit on, or Kratos's throne from his lobby set, in the character's root space (metres, Y down, floor at
 y = 0, facing +Z), scaled so its sitting surface meets the sitting character and placed under them.
 
-    python3 tools/oob2gltf/seat.py OUT.glb bench|throne TOP X Z   # TOP: seat height in metres; X, Z: where it goes
+    python3 tools/oob2gltf/seat.py OUT.glb bench|throne HIPS X Z   # the sitting hips: height, and where they are (metres)
+
+Only the drawn mesh is exported: the models also carry their collision shells (materials whose own texture is a ground
+attribute, metal/rock/fairway) as plain meshes over and around the drawn one.
 """
 import io
 import os
@@ -17,9 +20,12 @@ import paths
 import rem
 import static
 
-# kind: (archive, model, height of its sitting surface (None: its top), depth of the spot the hips go), source units
-SEATS = {"bench": ("nakazawa/lobby03.xb", "L03Pchair.rem", None, 0.0),
-         "throne": ("nakazawa/lobby0303.xb", "L99kratoschair.rem", 0.52, -0.3)}
+# kind: (archive, model, height of its sitting surface (None: its top), depth of the spot the hips go (source units),
+# the surface's height as a share of the hips' height). The throne's seat is 0.518 high, 0.9 deep (front edge at
+# z = 0.2, backrest at -0.53 to -0.6 going up); Kratos's seated takes have the bottom of his buttocks at two thirds of
+# his hip height and recline about 35 degrees, so the hips go near the front edge and his upper back meets the backrest.
+SEATS = {"bench": ("nakazawa/lobby03.xb", "L03Pchair.rem", None, 0.0, 0.8),
+         "throne": ("nakazawa/lobby0303.xb", "L99kratoschair.rem", 0.518, 0.04, 0.67)}
 
 
 def colour_map(r, mi, files, attrs):
@@ -34,13 +40,20 @@ def colour_map(r, mi, files, attrs):
     return None
 
 
-def export(out, kind, top, x, z):
-    lobby, model, hi, back = SEATS[kind]
+def shell(r, mi, attrs):
+    """Material `mi` belongs to a collision shell: its own (first) texture is a ground attribute."""
+    t = r.materials[mi]["slots"][0]
+    return 0 <= t < len(r.texobjs) and os.path.splitext(r.textures[r.texobjs[t][1]])[0].lower() in attrs
+
+
+def export(out, kind, hips, x, z):
+    lobby, model, hi, back, share = SEATS[kind]
+    top = share * hips
     files = {p.name.lower(): p for p in sorted(Path(paths.XB, lobby).rglob("*")) if p.is_file()}
     # the collision attributes (rock, fairway, metal: what the ball does on it) also sit in the texture slots
     attrs = {p.stem.lower() for p in Path(paths.XB, lobby).rglob("attribute/*")}
     r = rem.Rem(files[model.lower()].read_bytes())
-    ms = static.meshes(r)
+    ms = [m for m in static.meshes(r) if not shell(r, m["material"], attrs)]
     s = top / (hi or max(float(m["pos"][:, 1].max()) for m in ms))
     o = glb.Builder()
     mats, prims = {}, []

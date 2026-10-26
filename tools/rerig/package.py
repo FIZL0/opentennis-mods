@@ -287,9 +287,9 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
         if held:  # ponytail: one seat per mod, under the first seated take (the takes reuse one sitting clip)
             name, (x, y, z) = next(iter(held.items()))
             kind = SEATED[next(s[0] for n, s, *_ in plan if n == name)]
-            # the seat's top a fifth of the hip height under the sitting root; root space is the world turned half way
+            # under the sitting hips (seat.py sizes it from their height); root space is the world turned half way
             # round the forward axis (`game_space`): x and y flip
-            subprocess.run([sys.executable, os.path.join(ROOT, "tools/oob2gltf/seat.py"), seat_glb, kind, str(0.8 * y), str(-x), str(z)], check=True)
+            subprocess.run([sys.executable, os.path.join(ROOT, "tools/oob2gltf/seat.py"), seat_glb, kind, str(y), str(-x), str(z)], check=True)
         elif os.path.exists(seat_glb):
             os.remove(seat_glb)
         manifest["motions"] = "motions.glb"
