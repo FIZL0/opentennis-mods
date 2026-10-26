@@ -286,7 +286,8 @@ fn export(model: &mdl::Model, mats: &mtl::Mtl, noise: &[noi::Deformer], motions:
     let mut primitives = Vec::new();
     let any_morph = prims.iter().any(|p| p.morph.iter().flatten().any(|d| *d != [0.0; 3]));
     for (m, p) in prims.iter().enumerate() {
-        if p.idx.is_empty() {
+        // Louise's lone untextured "sankaku" (triangle) on her head shows through the mouth here; it's left out
+        if p.idx.is_empty() || mats.materials[m].name == "sankaku" {
             continue;
         }
         let count = p.pos.len();
