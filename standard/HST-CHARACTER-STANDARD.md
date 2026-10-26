@@ -86,25 +86,26 @@ vertex `[deformer index, share]` (share 0 = still). `hst-gltf` exports the disc'
 ### 3b. Spring bones (optional)
 
 For sources whose hair simulates as bone chains (Out of Bounds) rather than `.NOI` noise. A joint node with
-`extras.spring = {"limit", "stiffness", "gravity", "damping"}` is a point mass at that joint, hung on its parent; HST
-steps it at 60 Hz after the pose and turns the **parent** to point at it:
+`extras.spring` is a link of a chain: a path of spring joints from its **anchor** (a spring joint whose parent has
+none) down, plus a free tip one last-link offset past its end. HST runs Out of Bounds' own chain solver at 60 Hz after
+the pose: every joint but the anchor is a point mass under gravity, held to its neighbours by stiff length springs and
+dragged along by the head's motion; after each step every link turns toward the next mass, at most `limit` degrees
+off its bind direction in its (solved) parent's frame. Nothing pulls back to the pose: the rigid links and their
+cones keep the shape. Spring joints play from their bind pose; a clip's keys on them are ignored.
 
-- `limit` — degrees the mass may swing off the posed direction (0 = rigid);
-- `stiffness` — share of the gap to the posed position pulled back each step (0..1);
-- `gravity` — m/s², straight down in the world;
-- `damping` — share of the last step's motion kept (0..1).
+- `oob` — Out of Bounds' 16 words per joint (`oob2gltf` writes them): 0 limit °, 1 carry (share of the head's motion
+  that drags the mass), 2 gravity m/s², 3 mass, 4 wind, 5/6 length-spring stiffness/damping, 7 velocity kept per
+  1/60 s, 8 how much of the pose correction feeds back into velocity, 10/11 bounce/slide (collision, not used yet).
+- Without `oob`: `limit`, `stiffness` (= carry), `gravity`, `damping` (= velocity kept) over the defaults
+  40, 0.65, 9.8, 0.83 (mass 0.5, springs 500/1, feedback 0.2).
 
-Missing keys default to 30, 0.5, 4.9, 0.83. A spring joint whose parent has none is its chain's **anchor**: pinned,
-so a chain never turns the core joint it hangs on. Other keys are ignored (`oob2gltf` keeps the source's raw 16
-words as `oob`). `rerig.py` keeps `extras.spring` on every joint it keeps. Visual only: the sim never sees it.
+`rerig.py` keeps `extras.spring` on every joint it keeps. Visual only: the sim never sees it.
 
 ### 3c. Spring colliders (optional)
 
 `extras.colliders` on any joint: a list of ellipsoids, each a glTF 4×4 matrix (16 numbers, column-major) in that
 joint's space that maps the unit sphere onto the ellipsoid (its scaled axes are the radii, its translation the
-centre). Each step, a spring mass (§3b) that ends up inside one is pushed out to its surface, so hair stays out of
-the head, a hat or the body. An ellipsoid the animated pose itself puts the mass inside is ignored for that mass, so
-a collider never pulls hair off its pose. `oob2gltf` writes the source's ellipsoids on models with spring chains;
+centre). Not used by HST yet (spring masses will be pushed out of them, as in Out of Bounds). `oob2gltf` writes the source's ellipsoids on models with spring chains;
 `rerig.py` carries them like the skin.
 
 ## 4. Face

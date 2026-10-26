@@ -129,39 +129,22 @@ right-handed, same as glTF, so no axis change. Rig = 3ds Max Biped (`Bip01*`, 67
 `ForearmRoll`) under `SMF2Root → pcNN_Reference`, plus 3–53 per-character extra bones (hair `pony*`, earrings
 `*_ering*`, cloth helpers `*__ClothSphere`, `iki__Breath__ref`, props). Node counts: 72–122.
 
-### Dynamics (after the node tree) — confidence: layout high (all 102 `.rem` parse exactly to EOF), meanings guessed
+### Dynamics (after the node tree) — confidence: layout high (all 102 `.rem` parse exactly to EOF), meanings from the program (*Chain solver* below)
 
 A stream of items, each starting with a 16-word (0x40-byte) header, collision primitives and spring chains
 interleaved (`rem.py: _dynamics`):
 
-- **Collision primitive** (0x88 bytes): `u32 shape` (0 = ellipsoid; 1, 2 the program's other two classes, box and
-  cylinder by its RTTI names `DSClothPrimBox`/`DSClothPrimCylinder`, which is which unchecked), `u32 node index`,
+- **Collision primitive** (0x88 bytes): `u32 shape` (0 = ellipsoid, 1 = box, 2 = cylinder: the solver's per-kind
+  tests below), `u32 node index`,
   `f32` (1.0 on ellipsoids, 0 otherwise), 13 zero words, then `f32[16]` row-vector matrix (scaled axes = radii,
   row 3 = centre) in the node's space. 110 ellipsoids, 2 of each other kind over the c00 models.
 - **Spring chain**: `u32 n`, 15 zero words, then `n × { f32[16] params; str bone }`. Told apart from a primitive
-  by words 1..15 all being zero. A chain's bones are a parent→child path; its last bone is often a leaf, so each
-  record is a point mass at its bone and the bone's parent turns toward it. The first record (stiffness 1, limit
-  0–5) is the anchor.
-
-Params over every c00 chain (meaning read from the values, not from the program's code):
-
-| word | values | taken as |
-|---|---|---|
-| 0 | 0 … 170, rising down a chain (scarf ends 150–170) | swing limit, degrees |
-| 1 | 1.0 at anchors, falling to 0.1 | stiffness (pull back to the pose) |
-| 2 | 9.8 always | gravity |
-| 3 | 0.4 … 3.0 (0.5 mostly, scarf 3.0) | gravity scale |
-| 4 | 0 … 30, rising down chains | ? (a second angle?) |
-| 5 | 500 always | ? |
-| 6 | 1 or 0.5 | ? |
-| 7 | 0.7 … 0.92 (0.83 mostly) | damping (motion kept per frame) |
-| 8 | 0 … 1.2 | ? |
-| 10 | 0.2 or 0.5 | ? |
-| 11 | 0.8 always | ? |
-| 9, 12–15 | 0 | unused |
+  by words 1..15 all being zero. A chain's bones are a parent→child path; each record is a mass at its bone, each bone
+  turns toward the next record's mass and the last toward a virtual tip; the first record is pinned (*Chain solver*).
 
 `export.py` writes standard §3b `extras.spring = {limit: w0, stiffness: w1, gravity: w2·w3, damping: w7, oob:
-all 16}` on each chain bone; HST's loader steps them as a plain mass-spring (`crates/hst/src/spring.rs`).
+all 16}` on each chain bone; HST's loader steps them as a plain mass-spring (`crates/hst-base/src/spring.rs`, a
+stand-in, not the solver below).
 
 Chains per character (c00; other costumes of a character match): pc00 Jasmine — earrings R (2) and L (4), three
 ponytail chains (6, 4, 7); pc02 Sophie — `L/R_kami` (11 each), four ribbons (4 each); pc04 Sasha — ears (3, 3);
@@ -170,9 +153,183 @@ Kate — hair (2, 2); pc11 Dino — scarf `mafuL/R` (6, 6); pc12 Anya — fringe
 2-joint chain; pc15 Alex — earrings (4, 4), hair (2); pc16 Gloria — eight short chains (2–4). pc01, 03, 07, 08,
 09, 14: none.
 
-The program (`HSG5PS3`'s decrypted ELF) runs these through a cloth library ("REClothSim", "REClothPrim",
-"REClothMesh" source names) and `DSBone`/`DSCloth`/`DSClothPrim*` classes; the solver is AltiVec-vectorised and
-was not ported.
+#### Chain solver (from the program)
+
+Read from the game program's chain step (setup, per-frame driver, force, integrate, collision and pose passes),
+2026-10-26. Behaviour only; confidence per part in brackets. Vectors are rows, matrices row-vector (`x' = x·M`),
+units metres and seconds. `n` = named bones in the record, `wK` = param word K of a joint's own record.
+
+**Param words** [high: each one is read at exactly one place in the solver, listed below]
+
+| word | default | c00 values | meaning | used in |
+|---|---|---|---|---|
+| 0 | 40 | 0 … 170, rising down a chain | swing limit, degrees: most the bone may turn away from its bind direction | pose |
+| 1 | 0.65 | 1.0 at anchors, down to 0.1 | carry: fraction of the parent frame's motion that drags the mass along (not a pull to the pose) | carry |
+| 2 | 9.8 | 9.8 | gravity, m/s² | forces |
+| 3 | 0.5 | 0.4 … 3.0 | mass (gravity force is `w2·w3`, then divided by `w3`, so it only scales the springs and wind) | forces, integrate |
+| 4 | 0 | 0 … 30, rising down chains | wind response | forces |
+| 5 | 500 | 500 | length-spring stiffness | forces |
+| 6 | 1.0 | 1 or 0.5 | length-spring damping | forces |
+| 7 | 0.83 | 0.7 … 0.92 | velocity kept per 1/60 s (drag) | integrate, pose |
+| 8 | 0.2 | 0 … 1.2 | how much of the pose pass's correction is fed back into velocity | pose |
+| 10 | 0.2 | 0.2 or 0.5 | bounce: normal velocity after a hit = −`w10` × normal velocity before | collision |
+| 11 | 0.8 | 0.8 | slide: tangential velocity after a hit = `w11` × before | collision |
+| 9, 12–15 | 0 | 0 | never read | — |
+
+Defaults are only for a chain built without records; every `.rem` chain carries its own.
+
+**Building a chain** (when the character is set up) [high]
+- Joints `0 … n`: joint `k < n` is record `k`'s bone. Joint `n` is an extra **tip** that has no bone. It takes the
+  last record's local matrix and params, so it sits one more last-bone offset beyond the last bone, in the last
+  bone's frame.
+- Each joint keeps:
+  - its **bind local** matrix `A` (the bone's local matrix relative to its parent at build time);
+  - a working copy `B` (starts as `A`);
+  - a world matrix `C`;
+  - position `p`, velocity `v`, force `F` and a carry step `c`;
+  - its rest length `L0 = |translation of A|` (0 if that is zero);
+  - a **fixed** flag (set on joint 0 only; the tip is free).
+- `C = A·P`, walking from root to tip. `P` is the parent's `C`; for joint 0 it is the root frame `R` below. Then
+  `p = translation of C`, and `v = F = c = 0`.
+- **Root frame** `R` = the world matrix of the first bone's parent bone (model space) × the character's world
+  placement. The chain remembers last frame's `R` as `Rprev`.
+
+**Time step** [high]
+- One call per game frame. It runs `N = 60 / 30 = 2` substeps of `dt = 1/60` s each: a fixed rate of 60 and a
+  frame-rate argument of 30, integer division. It never uses the real frame time.
+- So the hair advances 1/30 s per call. At 60 fps the port runs one substep per frame (equivalently, call it with
+  frame rate 60).
+
+**Gust** (once per call, per chain) [high]
+- A gust factor `g` moves linearly from `gOld` to `gNew` over `D` frames. Over a span, `g = gOld + (gNew − gOld)·t/D`
+  for `t = 0 … D−1`.
+- When `t` reaches `D`, a new span starts:
+  - `t = 0`, `gOld = gNew`;
+  - `D = trunc(3 + 4·r)`, so 3 to 6 frames;
+  - `gNew = r'` in `[0, 1)`.
+  - `r` and `r'` are two draws from the game's general `rand()` (30 bits, low 11 dropped, scaled by 2⁻³⁰).
+- Everything starts at 0, so the first call starts a span.
+- Wind vector `W` = the game's global wind direction × its global wind strength × `g`. That is the golf course's
+  wind; HST would feed its own, or zero. [medium: the scaling is clear, the global is the course-wind object by its
+  use]
+
+**Per call, before the substeps** [high]
+1. `M = Rprev⁻¹ · R`: how the root frame moved since last frame. Then `Rprev = R`.
+2. Root target `q = (translation of A₀)·R`, and start `s = p₀`.
+3. Carry step for every free joint: `c = (p·M − p) · w1 / N`.
+4. Per-substep wind `w = W / N`.
+
+**Each substep `i = 1 … N`**, in this order:
+
+1. **Root.** `p₀ = s + (q − s)·i/N`. [high]
+2. **Forces** (joint order) [high]
+   - Fixed joint: `p += v·dt`, nothing else.
+   - Free joint `j`:
+     - `p += c`
+     - `F = (0, −w2·w3, 0) + w·u·w4`, where `u` is a fresh `rand()` in `[0, 1)` per joint and substep, the same
+       for all three axes.
+     - A length spring to the previous joint (`k = j−1`, rest `L0ⱼ`). For the tip, that is the only spring.
+     - For `j < n`, a second one to the next joint (`k = j+1`, rest `L0ₖ`).
+     - Each spring: `d = pⱼ − pₖ`, `L = |d|`. If `L ≠ 0`: `F += −( w5·(L − rest) + w6·((vⱼ − vₖ)·d)/L ) · d/L`.
+     - `w5` and `w6` are always joint `j`'s own.
+     - Only joint `j` is pushed. There is no equal and opposite force on `k`, which gets its own pull when its turn
+       comes.
+     - Neighbours are read as they stand at that moment: earlier joints have already had `p += c` this substep.
+       [medium on that detail]
+3. **Integrate**, free joints only [high]
+   - `v += F/w3 · dt`
+   - `p += v·dt` (semi-implicit Euler)
+   - `v *= w7^(60·dt)`, which is just `w7` at `dt = 1/60`.
+4. **Collision shapes for this substep** [high]
+   - Each shape's placement matrix is blended element by element between last frame's and this frame's:
+     `Sprev + (Scur − Sprev)·i/N`. It is a plain matrix lerp, not a rotation slerp.
+   - From the blend the program derives the shape's world→unit-shape matrix, its unit→world matrix, and its normal
+     matrix (the transpose of world→unit).
+   - The last substep uses this frame's shapes directly.
+5. **Collision**, free joints only, each against every shape of the character in list order [high]
+   - The mass is a **point**: no radius anywhere. Let `l = p · world→unit`. Each shape is a unit shape in its own
+     space:
+     - **Ellipsoid** (kind 0): inside if `|l|² < 1`. Then `l' = l/|l|`, local normal `n = l/|l|`. (`l = 0` exactly
+       gives NaN; not guarded.)
+     - **Box** (kind 1): inside if `|lx|, |ly|, |lz|` are all `< 1`.
+       - The axis is the one with the largest `|l|`. Ties: x wins unless `|ly| > |lx|` or `|lz| > |lx|`; then y if
+         `|ly| > |lz|`, else z.
+       - `l'` = `l` with that coordinate set to `+1` if it was `> 0`, else `−1`.
+       - `n` = that unit axis with the same sign.
+     - **Cylinder** (kind 2): unit radius, axis local y, from y = −1 to +1. Inside if `|ly| < 1` and
+       `lx² + lz² < 1`.
+       - If `lx² + lz² < ly²` (nearer a cap): `l' = (lx, ±1, lz)` and `n = (0, ±1, 0)`, with `+` if `ly > 0`.
+       - Otherwise (side): `r = √(lx² + lz²)`, `l' = (lx/r, ly, lz/r)` and `n = (lx/r, 0, lz/r)`.
+   - On a hit:
+     - `p = l' · unit→world` (projected straight onto the surface);
+     - world normal `N̂` = `n` through the normal matrix, normalised;
+     - `vn = (v·N̂)·N̂`, then `v = −w10·vn + w11·(v − vn)`.
+   - The velocity rule applies whether the mass was moving in or out: a mass already leaving still gets its normal
+     velocity flipped. Later shapes see the moved `p` and new `v`.
+   - The two collision words are the colliding joint's own `w10`, `w11`.
+   - A kind other than 0–2 stops the program (debug trap).
+6. **Pose pass**, root to tip, with a running parent world matrix `P`, starting at `P = R` [high on the structure]
+   - For each joint `j` that is not the tip:
+     - Posed direction `d₀` = the next joint's bind offset turned by `A`'s rotation:
+       `d₀ = norm( (translation of Aⱼ₊₁) · rot(Aⱼ) )`. This is in the parent's space.
+     - Simulated direction: `e = pⱼ₊₁ · P⁻¹ − translation of Aⱼ`. That is the next mass in the parent's space,
+       measured from where this bone's bind pose puts it. `d₁ = norm(e)`, or `d₁ = d₀` if `e` is exactly zero.
+     - Angle `θ = min( acos(clamp(d₀·d₁, −1, 1)), w0·π/180 )`.
+     - Axis `a = norm(d₀ × d₁)`, or `(0, 0, 1)` if the cross product is exactly zero. This matters only for a bone
+       folded straight back (θ = 180° before the limit).
+     - `Rot` = the rotation by `θ` about `a`, so `x·Rot = x cosθ + (a × x) sinθ + a (a·x)(1 − cosθ)`. It turns `d₀`
+       toward `d₁`.
+     - `rot(Bⱼ) = rot(Aⱼ) · Rot`. The translation of `B` stays `A`'s.
+   - For every joint, tip included (the tip keeps `B = A`):
+     - `Cⱼ = Bⱼ · P`
+     - `p_new = (translation of Aⱼ) · P`
+     - `vⱼ += (p_new − pⱼ)/dt · w7^(60·dt) · w8`
+     - `pⱼ = p_new`
+     - `P = Cⱼ`
+   - So **bone lengths are rigid**, and each bone stays inside a cone of half-angle `w0` around its bind direction,
+     measured in its already-solved parent's frame. The springs and the cone, not a pull toward the pose, are what
+     keep hair near its posed shape.
+   - Joint 0 is fixed but **does turn**: its position is pinned to `q`, and its direction follows mass 1 within its
+     own `w0`. The anchors' 0–5° is what holds the root.
+   - The fixed joint's `v` also picks up the feedback term. Next substep it moves `p₀` by `v·dt` before the springs
+     read it, then the pose pass pins it again.
+   - The pose pass runs after collision, so a mass can end a substep back inside a shape. Nothing re-tests it.
+
+**Output** (after the substeps) [high]
+- Each named bone's local matrix in the skeleton is replaced by its `B`. That is the rotation from the pose pass and
+  the bind translation; the bone's own animation keys are ignored.
+- The skeleton's world matrices are then rebuilt from the chain's first bone down.
+- The tip is never written.
+
+**Order in a frame** [high]
+1. The character's collision shapes are updated from its bones: last frame's become `Sprev`.
+2. If the character's **reset** flag is set: for each chain, `Rprev = R`; every joint is rebuilt from its own `A`
+   (as when built: `B = A`, `v = F = c = 0`, positions on the bind pose); then the whole per-call step runs 10
+   times (10 settle frames, 20 substeps). The flag is cleared at the end of the frame.
+3. Each chain's step runs, in chain order.
+
+There is no distance or velocity check for teleports. A cut is handled only by the reset flag. On a reset frame the
+shapes are updated twice, so the regular step sees no sweep; during the 10 settle calls the shapes still blend from
+the frame before the reset. [high on the mechanism, low on when the game sets the flag]
+
+**What it means for our stand-in** (`crates/hst-base/src/spring.rs`):
+- Word 1 is not a stiffness toward the pose. Our stand-in uses it as one, so the fringe hangs by gravity alone,
+  pulled back only weakly.
+- The game has no pull back to the pose. It keeps bones rigid and inside a per-bone `w0` cone, measured from the
+  bind direction in the solved parent's frame.
+- The game also turns every bone, joint 0 included, toward the next mass, and the last bone toward a virtual tip.
+- It collides each mass with the character's ellipsoids, boxes and cylinders.
+- Gravity is a full 9.8 m/s², and the springs are stiff (`w5/w3` = 1000 s⁻²).
+
+**Open questions**
+- Which `.rem` primitives make up the set a chain collides with: all of them, or only one of the two groups the
+  loader keeps (it reads one primitive group before the chains and one after). [low]
+- What sets the character reset flag in play: cut, character placement, replay. [low]
+- Whether the bind local `A` is the file's bind pose or the pose at the time the chain is built. If an animation is
+  playing then, `A` would hold that pose. [medium: built at character setup, so most likely bind]
+- Whether the fixed 60 rate or the 30 frame-rate argument ever changes (only the load-time values were seen). [medium]
+- The draw order of `rand()` (gust, then the wind force per joint) matters only to match the game's random stream,
+  which HST need not do. [n/a]
 
 ### `.mot` skeletal motion — confidence: high
 
