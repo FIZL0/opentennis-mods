@@ -39,6 +39,8 @@ import mirror  # noqa: E402
 import takes  # noqa: E402
 import more_voices  # noqa: E402
 
+# picked by the user (2026-10-26)
+JOKE = {"fore_pc02_emma", "fore_pc07_regis", "oob_pc17_kratos", "oob_pc18_toro", "oob_pc19_sackboy"}
 GAME_NAME = {"fore": "Hot Shots Golf Fore! (PS2)", "oob": "Hot Shots Golf: Out of Bounds (PS3)",
              "getagrip": "Hot Shots Tennis: Get a Grip (PSP)",
              "opentee2": "Hot Shots Golf: Open Tee 2 (PSP)"}
@@ -388,6 +390,8 @@ def main():
                         "ai_row": donor["index"], "face": "morph", "voice": None, "todo": []}
             if hand_why:
                 manifest["hand_why"] = hand_why
+            if manifest["id"] in JOKE:
+                manifest["joke"] = True  # standard §6: own select category, never drawn by Random
             if game in ("fore", "oob"):
                 # already high-res: opentennis's upscale_mods.py leaves it alone
                 manifest["upscale"] = False
