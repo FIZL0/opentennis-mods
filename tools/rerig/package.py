@@ -226,6 +226,16 @@ def voices(prog, dst):
     return out
 
 
+# Source clips that sit on furniture the reaction doesn't have, and what goes under their takes (standard §6
+# `extras.seat`, tools/oob2gltf/seat.py): Anya's eagle sits on air (the lobby's piano bench), Kratos's result screens
+# on his throne. No other character's clip sits (2026-10-26: the low ones crouch, kneel or squat over their feet).
+SEATED = {"ga_pc12_ea_r00": "bench", **{f"rslt_{k}_pc17": "throne" for k in ("wait", "win", "vict", "get", "loss")}}
+
+
+def seat(seq):
+    return {"seat": "seat.glb"} if seq and seq[0] in SEATED else {}
+
+
 def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
     """Fore, Out of Bounds, Open Tee 2 to the Get a Grip standard, from the game's data module."""
     D = data(game)
@@ -270,20 +280,18 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
                     whys[name] = f"take {k + 1} of {hst_name} (takes.py{', again for its other line' if k >= len(first) else ''})"
                 if w:
                     whys[name] = f"{whys.get(name, '')} saying its own line, voice key {have.index(w)}".lstrip()
-                plan.append((name, s, frames, pin, {"voice": have.index(w)} if w else {}))
-            # Out of Bounds' lobby avatars sit on the furniture: one more lost-point take sits down on the lobby's
-            # piano bench, popped in under them while it plays (standard §6 `extras.seat`)
-            if game == "oob" and hst_name == "re_di":
-                k = len(first + again)
-                whys[f"{hst_name}.{k}"] = f"take {k + 1} of {hst_name}: sits down on seat.glb, then stands up"
-                plan.append((f"{hst_name}.{k}", ["avatar_aba00_si", "~"], frames, True,
-                             {"seat": "seat.glb", "arms_from": f"rslt_wait_pc{n:02d}"}))
+                plan.append((name, s, frames, pin, ({"voice": have.index(w)} if w else {}) | seat(s)))
         hz = HZ.get(game, 60)
         held = motions.make(costumes[0], src, os.path.join(mod, "motions.glb"), plan, rate=hz / 60)
-        for x, y, z in held.values():
-            # ponytail: the seat's top a fifth of the pelvis height under the sitting pelvis (Y down), under it
-            subprocess.run([sys.executable, os.path.join(ROOT, "tools/oob2gltf/seat.py"), os.path.join(mod, "seat.glb"),
-                            str(-0.8 * y), str(x), str(z)], check=True)
+        seat_glb = os.path.join(mod, "seat.glb")
+        if held:  # ponytail: one seat per mod, under the first seated take (the takes reuse one sitting clip)
+            name, (x, y, z) = next(iter(held.items()))
+            kind = SEATED[next(s[0] for n, s, *_ in plan if n == name)]
+            # the seat's top a fifth of the hip height under the sitting root; root space is the world turned half way
+            # round the forward axis (`game_space`): x and y flip
+            subprocess.run([sys.executable, os.path.join(ROOT, "tools/oob2gltf/seat.py"), seat_glb, kind, str(0.8 * y), str(-x), str(z)], check=True)
+        elif os.path.exists(seat_glb):
+            os.remove(seat_glb)
         manifest["motions"] = "motions.glb"
         manifest["motions_why"] = {k: f"{whys.get(k, '')}; {' then '.join(seq)}{', root held on its spot' if pin else ''}, played at {hz} Hz, its own length and at least the donor's clip ({fr} frames)"
                                    for k, seq, fr, pin, *_ in plan}

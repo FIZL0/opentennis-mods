@@ -134,11 +134,17 @@ def export_model(pc, costume, out_path):
         if mi not in matmap:
             m = r.materials[mi]
             base, alpha = texture(m['slots'][0])
-            if base is None:
+            pbr = {'metallicFactor': 0.0, 'roughnessFactor': 0.8}
+            if base is not None:
+                pbr['baseColorTexture'] = {'index': base}
+            elif any(k in m['name'].lower() for k in ('eye', 'lens')):
+                # untextured parts drawn in their diffuse colour (Sackboy's button eyes, his sunglasses' lenses);
+                # the other untextured ones (lids, cloth proxies) stay out
+                pbr['baseColorFactor'] = [float(x) for x in m['colors'][0]]
+            else:
                 matmap[mi] = None
                 return None
-            mat = {'name': m['name'], 'pbrMetallicRoughness': {'baseColorTexture': {'index': base},
-                                                              'metallicFactor': 0.0, 'roughnessFactor': 0.8}}
+            mat = {'name': m['name'], 'pbrMetallicRoughness': pbr}
             nrm, _ = texture(m['slots'][4], normal=True)
             if nrm is not None:
                 mat['normalTexture'] = {'index': nrm}
