@@ -208,6 +208,9 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   `racket_nn`, read from the player's disc, never shipped) instead of the donor's. Looks only. `package.py` gives
   every mod of a game a different racket (Get a Grip's models as `racket.glb`, else an HST one here) and says why in
   `racket_why`.
+- `joke` (optional, default `false`): `true` for a joke character: the character select lists it under its own
+  "Joke characters" category (after every game's, in place of its `source`'s), and Random never picks it. Anything
+  other than `true`/`false` is refused.
 - `upscale` (optional, default `true`): `false` for mods whose textures are already high-res (e.g. Hot Shots
   Golf Fore! and Out of Bounds players): `upscale_mods.py` skips the mod, the game never reads its `textures/upscaled/` (it draws
   the embedded textures whatever the "upscaled textures" setting), and the mod store never downloads that set

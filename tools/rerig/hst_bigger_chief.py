@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
-VERSION = "2"
+VERSION = "3"
 
 MOD = {
     "standard": 1,
@@ -36,6 +36,7 @@ MOD = {
     "size_why": "1.5x Big Chief's size",
     "run_speed": 0.25,
     "shot_power": 3,
+    "joke": True,
     "version": VERSION,
 }
 
