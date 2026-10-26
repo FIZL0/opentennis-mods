@@ -270,9 +270,13 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
             # the reaction's further takes (takes.py; the game draws one in turn as it starts), timed as the reaction;
             # a clip the source game plays with lines of its own says them (§6 `extras.voice`), one take per line:
             # its first in its place, the others as more takes after
-            have = prog.get(REACTION_PROGRAM[hst_name], [])
+            seqs = [seq] + [[x] for x in takes.takes(game, n).get(hst_name, [])]
+            # a take's own line plays only with it, so it is among the program's lines even where the picks leave it out
+            have = prog.setdefault(REACTION_PROGRAM[hst_name], [])
+            own = list(dict.fromkeys(w for s in seqs for w in res.get(s[0], []) if w not in have))
+            have[:] = (own + have)[:KEYS.get(REACTION_PROGRAM[hst_name], 5)]
             first, again = [], []
-            for s in [seq] + [[x] for x in takes.takes(game, n).get(hst_name, [])]:
+            for s in seqs:
                 ws = [w for w in res.get(s[0], []) if w in have]
                 first.append((s, ws[0] if ws else None))
                 again += [(s, w) for w in ws[1:]]

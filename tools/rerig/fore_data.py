@@ -193,6 +193,19 @@ def voices(pc):
     return prog, {k: w for k, w in WHY.items() if k in prog or k == 6}
 
 
+def results(pc):
+    """{clip: [wav]}: each hole-result clip and the line the game plays with it. The costume-0 celebration archive
+    PCNN00SS.XB holds one ga_ motion and the one g_<code>K bank it plays (Hubert's birdie robot says 'I believe I'm
+    doing the robot!'); package.py tags the clip's takes with it (standard §6 `extras.voice`)."""
+    code, out = roster()[pc][1], {}
+    for xb in sorted(glob.glob(_p(f"out/files/fore/PC/PC{pc:02d}/PC{pc:02d}00??.XB"))):
+        clip = [os.path.basename(f)[:-4] for f in glob.glob(f"{xb}/data/pc/pc{pc:02d}/*/ga_*.ani")]
+        bank = [re.fullmatch(rf"g_{code}(\d+)\.hd", os.path.basename(f)) for f in glob.glob(f"{xb}/data/sound/voice/pc_game/*/g_*.hd")]
+        if len(clip) == 1 and len(bank) == 1 and bank[0]:
+            out[clip[0]] = [_tag(pc, code, f"g{bank[0][1]}")]
+    return out
+
+
 # ---- reactions ------------------------------------------------------------------------------------------------
 
 def _anim_names(f):
