@@ -7,7 +7,7 @@ optional mod: players install him from the mod store (or copy extras/hst_bigger_
 python3 tools/rerig/hst_bigger_chief.py
 
 Only a mod.json: `disc_body` plays pc07's own costumes, faces, racket and voice from the player's disc (standard §6),
-`scale`/`run_speed`/`shot_power` do the rest. Nothing from the disc is read or written here.
+`scale`/`run_speed`/`stats` do the rest. Nothing from the disc is read or written here.
 """
 import json
 import os
@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
-VERSION = "3"
+VERSION = "4"
 
 MOD = {
     "standard": 1,
@@ -29,13 +29,13 @@ MOD = {
     "donor_why": "Big Chief himself: his disc body, motions, faces and voice",
     "hand": "right",
     "params": {"base": 7, "override": {}},
-    "params_why": "Big Chief's row; `scale` grows its size-bound columns (reach, heights, collision)",
+    "params_why": "Big Chief's row; `scale` grows its reach columns (reach, dive, collision), `stats` A grades the rest",
     "ai_row": 7,
     "face": "morph",
     "scale": 1.5,
     "size_why": "1.5x Big Chief's size",
     "run_speed": 0.25,
-    "shot_power": 3,
+    "stats": "A",
     "joke": True,
     "version": VERSION,
 }

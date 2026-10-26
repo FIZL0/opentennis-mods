@@ -11,13 +11,13 @@
     "base": 7,
     "override": {}
   },
-  "params_why": "Big Chief's row; `scale` grows its size-bound columns (reach, heights, collision)",
+  "params_why": "Big Chief's row; `scale` grows its reach columns (reach, dive, collision), `stats` A grades the rest",
   "ai_row": 7,
   "face": "morph",
   "scale": 1.5,
   "size_why": "1.5x Big Chief's size",
   "run_speed": 0.25,
-  "shot_power": 3,
+  "stats": "A",
   "joke": true,
-  "version": "3"
+  "version": "4"
 }
