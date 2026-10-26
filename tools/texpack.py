@@ -152,4 +152,6 @@ def main():
 
 
 if __name__ == "__main__":
+    import fresh
+    fresh.check()
     main()

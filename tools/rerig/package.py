@@ -440,4 +440,7 @@ def main():
 
 
 if __name__ == "__main__":
+    sys.path.insert(0, os.path.join(ROOT, "tools"))
+    import fresh
+    fresh.check()
     main()
