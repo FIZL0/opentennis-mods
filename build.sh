@@ -5,7 +5,8 @@
 #   ./build.sh fore oob   just those games
 #
 # Drop disc images anywhere under iso/: PS2/PSP .iso files, and Out of Bounds as its decrypted PS3 folder
-# (the one with PS3_DISC.SFB). Discs are recognised by their ID, not their filename.
+# (the one with PS3_DISC.SFB) or its PSN edition (the NPUA80765 .pkg, or that unpacked: it adds the DLC
+# costumes and characters, and wins over the disc). Discs are recognised by their ID, not their filename.
 set -euo pipefail
 cd "$(dirname "$0")"
 JOBS=${JOBS:-$(nproc)}
@@ -16,7 +17,7 @@ game_of() {
     SCUS_974.01) echo fore ;;
     UCUS-98701) echo getagrip ;;
     UCUS-98693) echo opentee2 ;;
-    BCUS-98115) echo oob ;;
+    BCUS-98115|NPUA80765) echo oob ;;
     SCUS_976.10) echo hst ;;  # HST itself: only its stats table and reaction motions, for the mods' stats
   esac
 }
@@ -32,6 +33,13 @@ disc_id() {  # PSP: UMD_DATA.BIN starts with the ID; PS2: SYSTEM.CNF names the b
 declare -A SRC
 find_discs() {
   local f g
+  # PSN Out of Bounds first: it holds everything the disc does plus the DLC
+  while IFS= read -r -d '' f; do
+    [ -z "${SRC[oob]:-}" ] && head -c 256 "$f" | grep -aq NPUA80765 && SRC[oob]=$f
+  done < <(find -L iso -iname '*.pkg' -print0 2>/dev/null)
+  while IFS= read -r -d '' f; do
+    [ -z "${SRC[oob]:-}" ] && grep -aq NPUA80765 "$f" && SRC[oob]=$(dirname "$(dirname "$f")")
+  done < <(find -L iso -path '*PS3_GAME/PARAM.SFO' -print0 2>/dev/null)
   while IFS= read -r -d '' f; do
     g=$(game_of "$(disc_id "$f")")
     [ -n "$g" ] && [ -z "${SRC[$g]:-}" ] && SRC[$g]=$f
@@ -48,6 +56,7 @@ unpack() {  # disc -> extracted/<game>/ (skipped when already there)
   [ -n "$src" ] || { echo "$g: no disc found under iso/"; exit 1; }
   mkdir -p extracted
   if [ -d "$src" ]; then ln -s "$(realpath "$src")" "extracted/$g"
+  elif [[ "$src" == *.pkg ]]; then python3 tools/unpkg.py "$src" "extracted/$g/PS3_GAME"
   else 7z x -y -o"extracted/$g" "$src" >/dev/null; fi
 }
 

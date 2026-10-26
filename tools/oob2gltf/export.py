@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Export Hot Shots Golf: Out of Bounds (PS3) playable characters to glTF 2.0.
 
-  python3 tools/oob2gltf/export.py                 # everything: 17 characters x 6 costumes, textures, anims
+  python3 tools/oob2gltf/export.py                 # everything: every character and costume (6, 12 with the PSN DLC), textures, anims
   python3 tools/oob2gltf/export.py --pc 0 --costume 0 --check   # one model + check renders
 
 Outputs (all git-ignored): out/models/oob/<slug>/<slug>_cNN.glb, out/anims/oob/<slug>.glb (+ avatar clips),
@@ -318,12 +318,11 @@ def main():
     ap.add_argument('--lod', type=int, choices=(0, 1, 2), default=0, help="the game's level of detail (paths.LOD)")
     a = ap.parse_args()
     paths.LOD = a.lod
-    pcs = a.pc or list(range(len(paths.ROSTER)))
-    costumes = a.costume or list(range(6))
+    pcs = a.pc or [pc for pc in range(len(paths.ROSTER)) if paths.costumes(pc)]  # pc17-19: PSN edition only
     for pc in pcs:
         slug = paths.slug(pc)
         rem0 = None
-        for c in costumes:
+        for c in a.costume or paths.costumes(pc):
             if not paths.rem_path(pc, c):
                 continue
             out = os.path.join(paths.OUT_MODELS, slug, f'{slug}_c{c:02d}.glb')

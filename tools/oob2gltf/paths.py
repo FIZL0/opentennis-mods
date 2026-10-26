@@ -9,9 +9,9 @@ OUT_MODELS = os.path.join(ROOT, 'out/models/oob')
 OUT_ANIMS = os.path.join(ROOT, 'out/anims/oob')
 OUT_TEX = os.path.join(ROOT, 'out/textures/oob')
 
-# kikkawa/menu/profile_txt.xb0 .../profile2/pcNN.dat (name, title, country)
+# kikkawa/menu/profile_txt.xb0 .../profile2/pcNN.dat (name, title, country); pc17-19 are the PSN edition's DLC guests
 ROSTER = ['Jasmine', 'Nick', 'Sophie', 'Bjorn', 'Sasha', 'Fernando', 'Sonia', 'Felipe', 'Bloom', 'L.J.', 'Kate',
-          'Dino', 'Anya', 'Suzuki', 'S. Maruyama', 'Alex', 'Gloria']
+          'Dino', 'Anya', 'Suzuki', 'S. Maruyama', 'Alex', 'Gloria', 'Kratos', 'Toro', 'Sackboy']
 
 
 def slug(pc):
@@ -26,14 +26,25 @@ LOD = 0
 def rem_path(pc, costume, lod=None):
     lod = LOD if lod is None else lod
     core, rem = ('0', '') if lod == 0 else ('1_3', f'_lv{lod}')
-    g = glob.glob(os.path.join(PC, f'pc{pc:02d}/pc{pc:02d}_c{costume:02d}_{core}_core.xb/data/ueno/cgpc/pc/pc{pc:02d}/*{rem}.rem'))
+    g = glob.glob(os.path.join(PC, f'pc{pc:02d}/pc{pc:02d}_c{costume:02d}_{core}_core.xb/data/ueno/cgpc/pc/pc{pc:02d}/{cos(costume)}*{rem}.rem'))
     g = [f for f in g if lod or '_lv' not in os.path.basename(f)]
     return g[0] if g else None
 
 
+def costumes(pc):
+    """The character's costumes: 00-05 on the disc, and the PSN edition's DLC outfits 10-15."""
+    g = glob.glob(os.path.join(PC, f'pc{pc:02d}/pc{pc:02d}_c[0-9][0-9]_0_core.xb'))
+    return sorted(int(os.path.basename(f)[6:8]) for f in g)
+
+
+def cos(costume):
+    """The DLC outfits' files sit one folder down, in `cos/`."""
+    return 'cos/' if costume >= 10 else ''
+
+
 def tex_dir(pc, costume):
     # the `_1_3_tex` archive holds the same DDS files as `_0_tex` (and the LOD models name the same ones)
-    return os.path.join(PC, f'pc{pc:02d}/pc{pc:02d}_c{costume:02d}_{"0" if LOD == 0 else "1_3"}_tex.xb/data/ueno/cgpc/pc/pc{pc:02d}')
+    return os.path.join(PC, f'pc{pc:02d}/pc{pc:02d}_c{costume:02d}_{"0" if LOD == 0 else "1_3"}_tex.xb/data/ueno/cgpc/pc/pc{pc:02d}/{cos(costume)}')
 
 
 def find_tex(pc, costume, name):

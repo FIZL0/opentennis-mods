@@ -1,8 +1,8 @@
-"""Hot Shots Golf: Out of Bounds (PS3, pc00-16) character data for HST mods (notes/oob.md "Mod data").
+"""Hot Shots Golf: Out of Bounds (PS3, pc00-16; pc17-19 in the PSN edition) character data for HST mods (notes/oob.md "Mod data").
 Everything is read at run time from out/ (never committed).
 
 stats(), MAP, style(pc), heights(), voices(pc), reactions(pc) as package.py / gag_stats.py / sizing.py expect.
-`python3 tools/rerig/oob_data.py` prints all 17.
+`python3 tools/rerig/oob_data.py` prints them all.
 """
 import glob
 import json
@@ -16,7 +16,6 @@ import numpy as np
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 USR = "out/files/oob/PS3_GAME/USRDIR/xbdata"
 AUD = "out/audio/oob/PS3_GAME/USRDIR/xbdata"
-N = 17
 
 
 def _p(*a):
@@ -25,14 +24,16 @@ def _p(*a):
 
 # ---- stats ----------------------------------------------------------------------------------------------------
 
-# ueno/ability/player.dat ("ABI_PLAY", big-endian): 17 records of 5 f32 + 7 i32. The floats are the character-select
+# ueno/ability/player.dat ("ABI_PLAY", big-endian): 17 records (20 in the PSN edition) of 5 f32 + 7 i32. The floats are the character-select
 # bars in order (charaselect chrsel_prmset: bar_power, bar_control, bar_impact, bar_spin, bar_side); the ints were
 # read off the help texts (draw/fade, rough, bunker, rain, approach weaknesses), the last is the profile's sex.
 FLOATS = ("power", "control_spread", "impact", "spin", "side")
 INTS = ("curve", "rough", "bunker", "rain", "approach", "_const", "sex")
-# menu_help.to strings 500-516 describe the 17 in character-select order, not pc order. Matched by the flags
+# menu_help.to strings 500-516 describe the 17 in character-select order, not pc order (the PSN edition's
+# Kratos, Toro, Sackboy follow in pc order: "Expert Big Hitter: great draw shots", "Novice Spin Cat", "Novice Big
+# Hitter. Great fade shot", as their curve flags). Matched by the flags
 # (e.g. "poor in rough" = rough -1, "hits draw" = curve +1) and the tiers (the 5 lowest powers are Novice, ...).
-HELP_PC = [0, 1, 2, 3, 13, 4, 7, 6, 8, 5, 9, 10, 11, 12, 14, 15, 16]
+HELP_PC = [0, 1, 2, 3, 13, 4, 7, 6, 8, 5, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19]
 TYPES = ("All-rounder", "Big Hitter", "Control Player", "Spin Player", "Special")
 
 
@@ -73,7 +74,7 @@ def stats():
         h = hl[pc]
         out[pc] = {"name": _profile(pc)[0], **{k: str(v) for k, v in r.items() if k != "_const"},
                    "control": str(round(2 - r["control_spread"], 4)), "help": h,
-                   "tier": h.split()[0], "type": next(t for t in TYPES if t in h)}
+                   "tier": h.split()[0], "type": next(t for t in TYPES if t.split()[0] in h)}  # Toro: "Spin Cat"
     return out
 
 
@@ -193,14 +194,19 @@ SET_WON = [(0, 31), (0, 33), (1, 11), (1, 13), (0, 30), (1, 10)]
 SET_LOST = [(1, 9), (0, 29), (0, 25), (0, 24)]
 # takes that say something else in that actor's script (transcripts in notes/oob.md "Voice lines")
 SKIP = {0: {(0, 7), (0, 37), (0, 40)}, 1: {(0, 40)}, 2: {(0, 29)}, 5: {(0, 33)}, 8: {(0, 12)}, 10: {(0, 30), (1, 10)},
-        11: {(0, 12), (0, 30)}, 12: {(0, 16), (0, 37)}, 14: {(0, 23), (0, 27), (1, 10)}, 15: {(0, 40)}, 16: {(0, 7)}}
+        11: {(0, 12), (0, 30)}, 12: {(0, 16), (0, 37)}, 14: {(0, 23), (0, 27), (1, 10)}, 15: {(0, 40)}, 16: {(0, 7)},
+        17: {(0, 12), (0, 37)}}
+# The PSN edition's guests (pc17-19) keep the 58 slots, but Kratos's hole results are in a group 10 of their own
+# (his (0,29)-(0,34) and (1,9)-(1,14) are empty): the big wins and the curse at the fates, by transcript. Toro's
+# slots hold cat sounds already sorted by event; Sackboy is silent bar one birdie cue, as in LittleBigPlanet.
+EXTRA = {17: {9: [(10, 2), (10, 4), (10, 14), (10, 12)], 10: [(10, 10)]}}
 # HST program 5, the cry of a player the ball hits (one key): golf has no such event, so per actor one short take of
 # the English ga_ev/ga_sg/ga_vs banks (bank/wave) picked by transcript: a pain word first ('Ouch!', 'Ow'), else a
 # pained yelp ('Ugh!', 'Gah!', 'Wah!', うっ), else a startled 'Ah!'/'Oh!'; a wave other actors share is never one
 # (opentennis B560, transcripts in notes/oob.md "Voice lines")
 HIT = {0: "ev/009", 1: "sg/052", 2: "ev/008", 3: "vs/015", 4: "sg/055", 5: "sg/015", 6: "ev/038", 7: "ev/010",
        8: "sg/059", 9: "ev/009", 10: "ev/008", 11: "ev/005", 12: "sg/053", 13: "ev/015", 14: "vs/015", 15: "sg/014",
-       16: "vs/015"}  # Oh! うっ あ! Wah! Ugh! Ouch! Ah! UGH! Ah! Oh! Ow GAH! あ! D'AH! Ow. あ! Ah!
+       16: "vs/015", 17: "ev/004"}  # Oh! うっ あ! Wah! Ugh! Ouch! Ah! UGH! Ah! Oh! Ow GAH! あ! D'AH! Ow. あ! Ah! UGH!
 
 
 def hit_cry(pc):
@@ -234,6 +240,8 @@ def voices(pc):
 
     prog = {0: files(SHOUT), 1: files(STROKE), 2: files(MISHIT), 3: files(SHOUT), 4: files(WHIFF),
             5: hit_cry(pc), 7: files(WON), 8: files(LOST), 9: files(SET_WON), 10: files(SET_LOST)}
+    for p, slots in EXTRA.get(pc, {}).items():
+        prog[p] += [f for f in files(slots) if f not in prog[p]]
     why = {0: "sg (0,6)/(1,3): the effort grunts ('Hah!', 'Hup!'; the shortest line in every bank)",
            1: "sg (0,8)/(0,7)/(0,9)/(0,10): the shot shouts ('Hya!', 'Go!', 'Fly!', 'That's it!')",
            2: "sg (0,12)/(0,14)/(1,15): 'Oops!', 'Whoops!', 'No!'",
