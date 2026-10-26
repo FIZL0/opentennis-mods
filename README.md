@@ -12,7 +12,7 @@ The remaster has no mod loader yet. `standard/` defines what one should load.
 | Hot Shots Golf Fore! | PS2 | 24 × 8 costumes |
 | Hot Shots Tennis: Get a Grip | PSP | 15 |
 | Hot Shots Golf: Open Tee 2 | PSP | 22 |
-| Hot Shots Golf: Out of Bounds | PS3 | 17 × 6 costumes |
+| Hot Shots Golf: Out of Bounds | PS3 | 17 × 6 costumes; the PSN edition adds 6 DLC outfits each and 3 guests (20 characters) |
 
 **No game data is in this repo.** You supply your own disc images. Everything taken from them goes in `iso/`,
 `extracted/` and `out/`, which git ignores.
@@ -37,14 +37,15 @@ tools/
 
 - Rust (cargo), and a checkout of [OpenTennis](https://github.com/FIZL0/opentennis) next to this
   one as `../opentennis`, since `fore2gltf` depends on its `hst-data` crate.
-- Python 3 with numpy, scipy and Pillow.
+- Python 3 with numpy, scipy and Pillow (and `cryptography` for Out of Bounds' PSN `.pkg`).
 - `vgmstream-cli`, `ffmpeg` and `7z`.
 - Optional: `npx` with the `gltf-validator` npm package, for checking output files.
 
 ## Building the mods
 
 Put your discs anywhere under `iso/`: the `.iso` files for the PS2 and PSP games, and Out of Bounds as its
-decrypted PS3 folder (the one containing `PS3_DISC.SFB`). Then:
+decrypted PS3 folder (the one containing `PS3_DISC.SFB`), or its PSN edition's `.pkg` (NPUA80765, the
+complete edition with every DLC; it is unpacked for you and wins over the disc). Then:
 
 ```sh
 ./build.sh            # every supported disc it finds
@@ -53,7 +54,7 @@ decrypted PS3 folder (the one containing `PS3_DISC.SFB`). Then:
 
 This builds the same mods as listed under Status, with their stats, voices and reactions from
 `tools/rerig/*_data.py`, into `out/mods/<game>_pcNN_<name>/`. Discs are recognised by disc ID (US releases:
-SCUS-97401, UCUS-98701, UCUS-98614, UCUS-98693, BCUS-98115, and HST's SCUS-97610), so the filenames don't matter. Each game builds
+SCUS-97401, UCUS-98701, UCUS-98614, UCUS-98693, BCUS-98115 or NPUA80765, and HST's SCUS-97610), so the filenames don't matter. Each game builds
 on its own, except:
 
 - the golf games use Get a Grip's rackets. If that disc is there it's built too; if not, golf mods hold HST rackets from your disc only (`disc_racket`).

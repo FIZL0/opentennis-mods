@@ -3,7 +3,7 @@
 Exporter: `tools/oob2gltf` (Python 3: numpy, scipy, Pillow). No Rust, no game data in the tool.
 
 ```
-python3 tools/oob2gltf/export.py                          # all 17 characters x 6 costumes + anims + PNGs (~3 min)
+python3 tools/oob2gltf/export.py                          # every character and costume + anims + PNGs
 python3 tools/oob2gltf/export.py --pc 0 --costume 0       # one model (+ that character's anim file)
 python3 tools/oob2gltf/export.py --no-anims --no-textures # models only
 python3 tools/oob2gltf/check.py MODEL.glb out.png                       # bind pose, front/side/back
@@ -15,11 +15,28 @@ python3 tools/oob2gltf/check.py --face MODEL.glb out.png                # head c
 textured views with numpy (applies morph targets, incl. sparse accessors). All 119 outputs pass `gltf-validator`
 (npm `gltf-validator`, `validateBytes`) with 0 errors / 0 warnings, morph targets and weight animations included.
 
+## PSN edition (NPUA80765)
+The PSN "complete" package is a patched superset of the disc: every character model, motion and voice the disc has is
+byte for byte the same. `tools/unpkg.py` unpacks it (a retail .pkg is AES-128-CTR under the PS3's public package key;
+only the program is encrypted again inside). What it adds for the mods:
+- DLC outfits: costumes 10-15 for all 17, in the same archives' names (`pcNN_cNN_0_core.xb` & co.), their REM and
+  textures one folder down in `cos/`. Their node order differs from costume 00, the Bip01 set doesn't (rerig binds by name).
+- Three guests, pc17-19 (Kratos 1 costume, Toro 6, Sackboy 6), with their own motion, prize, voice and option-sound
+  archives and rows 17-19 of player.dat / the menu help. Profiles give no height (Kratos "Unknown", Toro "Purrr...",
+  Sackboy "2¾ inches"), so sizing keeps each model's own height: Toro and Sackboy stay as small next to the cast as in
+  Out of Bounds (rerig's check calls Sackboy's 0.16 m pelvis a FAIL; he is packaged anyway).
+- Per-outfit motion sets (`pcNN_motion_cos.xb`, `_motion_menu_cos.xb`, `_others_cos.xb`, `prize/pc/pcNN_cos.xb`): the
+  base set with a few clips swapped for the DLC outfits. The standard has one motions file per mod, so the DLC outfits
+  play the base clips; the `_cos` sets aren't exported.
+- Voices: Kratos keeps the 58-slot layout but his hole results sit in a group 10 of their own (`oob_data.EXTRA`);
+  Toro's slots hold cat sounds already sorted by event; Sackboy is silent bar one birdie cue.
+Switching a disc build to the PSN edition: delete `extracted/oob` and rerun `build.sh oob`.
+
 ## Outputs (`out/`, git-ignored)
 
 | What | Where |
 |---|---|
-| Models (mesh + skeleton + skin + base colour/normal maps embedded) | `out/models/oob/<slug>/<slug>_cNN.glb`, NN = costume 00–05 (102 files) |
+| Models (mesh + skeleton + skin + base colour/normal maps embedded) | `out/models/oob/<slug>/<slug>_cNN.glb`, NN = costume 00–05, 10–15 with the PSN edition |
 | Animations (skeleton + untextured `face` morph mesh of costume 00 + every clip, with morph-weight channels) | `out/anims/oob/<slug>.glb` (17 files, 82–86 clips each) |
 | Face morph check sheets (head close-up, neutral + each target at weight 1) | `out/models/oob/_face_check/<slug>.png` (all 17) |
 | All textures of each costume as PNG (incl. `_o`, `_s`, `_n`, portrait `face_pcNN_cNN`) | `out/textures/oob/<slug>/cNN/*.png` |
