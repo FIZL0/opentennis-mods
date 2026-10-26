@@ -150,7 +150,7 @@ How each setting acts:
 - **`damping`** is the share of speed kept each 1/60 s. 0.7 settles fast; 0.9 keeps swaying.
 
 The first bone stays pinned where the parent puts it. HST adds a free tip one bone-length past the last bone.
-There's no collision yet, so keep the limits tight wherever a strand lies close to a hat or the face.
+To keep a strand out of a hat or the face, add collision ellipsoids (`extras.colliders`, standard §3c) on the head.
 `standard/HST-CHARACTER-STANDARD.md` §3b has the full solver; Out of Bounds mods carry the game's own 16 words per
 bone as `spring.oob`.
 

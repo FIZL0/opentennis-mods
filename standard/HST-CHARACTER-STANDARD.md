@@ -95,7 +95,7 @@ cones keep the shape. Spring joints play from their bind pose; a clip's keys on 
 
 - `oob` — Out of Bounds' 16 words per joint (`oob2gltf` writes them): 0 limit °, 1 carry (share of the head's motion
   that drags the mass), 2 gravity m/s², 3 mass, 4 wind, 5/6 length-spring stiffness/damping, 7 velocity kept per
-  1/60 s, 8 how much of the pose correction feeds back into velocity, 10/11 bounce/slide (collision, not used yet).
+  1/60 s, 8 how much of the pose correction feeds back into velocity, 10/11 bounce/slide off a collider (§3c).
 - Without `oob`: `limit`, `stiffness` (= carry), `gravity`, `damping` (= velocity kept) over the defaults
   40, 0.65, 9.8, 0.83 (mass 0.5, springs 500/1, feedback 0.2).
 
@@ -105,7 +105,9 @@ cones keep the shape. Spring joints play from their bind pose; a clip's keys on 
 
 `extras.colliders` on any joint: a list of ellipsoids, each a glTF 4×4 matrix (16 numbers, column-major) in that
 joint's space that maps the unit sphere onto the ellipsoid (its scaled axes are the radii, its translation the
-centre). Not used by HST yet (spring masses will be pushed out of them, as in Out of Bounds). `oob2gltf` writes the source's ellipsoids on models with spring chains;
+centre). Each 60 Hz step, a spring mass (§3b) that ends up inside one is pushed onto its surface and bounced off it
+(Out of Bounds' rule, its words 10 and 11: bounce 0.2, slide 0.8 by default), so hair stays out of the head, a hat
+or the body. `oob2gltf` writes the source's ellipsoids on models with spring chains;
 `rerig.py` carries them like the skin.
 
 ## 4. Face
@@ -251,8 +253,8 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   **Seat**: `extras: {"seat": "FILE.glb"}` on an animation sits the character on FILE (a rigid `.glb` in the mod
   folder, like `racket.glb`, in the character's root space: metres, Y down, floor at y = 0, facing +Z) while that
   clip (or take) plays: it pops up from the floor as the clip starts and back down as it ends. A path outside the
-  folder, or no such file, fails the load. Looks only, as the clip. `tools/rerig/package.py` gives each Out of Bounds
-  mod a sit-down take of `re_di` on the lobby's piano bench (`tools/oob2gltf/seat.py`).
+  folder, or no such file, fails the load. Looks only, as the clip. `tools/rerig/package.py` puts an Out of Bounds lobby seat (the piano
+  bench, or Kratos's throne; `tools/oob2gltf/seat.py`) under the takes whose source clip sits on air (its `SEATED`).
   **Voice**: `extras: {"voice": K}` on a reaction's animation (or take) makes it say key K of that reaction's voice
   program (`voice/P_K.wav`, P the program the reaction speaks from) instead of a line picked as for the donor, so a
   celebration says the line the source game plays with it. Sound only: the pick and the match are unchanged. K must be
