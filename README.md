@@ -120,8 +120,39 @@ textures, stacked in an order) are `standard/HST-TEXTURE-PACK-STANDARD.md`; `too
   `_mouth`, plus `blink_eye`). The PSP games swap face textures instead, so their mods carry a `face.json`.
 - **Voice:** `voice/<program>_<key>.wav`, using HST's voice programs (serve/smash, stroke, mis-hit, dive, whiff,
   calls, post-point reactions).
+- **Swinging hair (optional):** bone chains tagged `extras.spring` (see *Making hair swing* below).
 - **`mod.json`:** the costumes, plus a donor HST character whose motions, faces, AI and stat sheet the mod uses,
   stat overrides, handedness and a `todo` list.
+
+## Making hair swing
+
+Any mod can have hair, ponytails, earrings or ribbons that swing; it doesn't have to come from Out of Bounds.
+
+1. Give the strand its own bones: a chain of joints, each the child of the one before, hung under the head (or
+   whatever it hangs from). Skin the strand to them. Three to ten bones is plenty.
+2. Tag every bone in the chain, the first one included, with a `spring` extra on its node (in Blender: a custom
+   property on the bone, exported with *Include → Custom Properties*):
+
+   ```json
+   "extras": { "spring": { "limit": 20, "stiffness": 0.5, "gravity": 9.8, "damping": 0.83 } }
+   ```
+
+3. Load the mod. The bones' rest pose is the shape the strand keeps; motions don't key them.
+
+How each setting acts:
+
+- **`limit`** is the most a bone may turn from its rest direction, in degrees. Keep it small (0–5) on the chain's
+  first bone so the strand stays rooted, then 15–40 down it. Use 0 for a part that should stay rigid. Small limits
+  all the way down (5–10) make a stiff, upswept ponytail; big ones make loose hair that hangs.
+- **`stiffness`** is how much of the head's motion drags the bone along, from 0 to 1. Use 1 near the root and drop
+  it toward the tip (0.1–0.3) so the end trails and swings out on a quick move.
+- **`gravity`** is in m/s². Leave it at 9.8.
+- **`damping`** is the share of speed kept each 1/60 s. 0.7 settles fast; 0.9 keeps swaying.
+
+The first bone stays pinned where the parent puts it. HST adds a free tip one bone-length past the last bone.
+There's no collision yet, so keep the limits tight wherever a strand lies close to a hat or the face.
+`standard/HST-CHARACTER-STANDARD.md` §3b has the full solver; Out of Bounds mods carry the game's own 16 words per
+bone as `spring.oob`.
 
 ## Status
 
