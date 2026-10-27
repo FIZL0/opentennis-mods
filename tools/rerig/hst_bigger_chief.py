@@ -1,5 +1,5 @@
 """Bigger Chief (opentennis task M11): HST's Big Chief (pc07) 1.5x as big, the roster's best stats, Kent's strokes and
-Lola's volleys on his own serve (the hardest of each), running at a fifth of his speed with almost no stamina -> extras/hst_bigger_chief/ (committed: it holds no game data).
+Lola's volleys at 1.15x and his own serve at 1.4x (card SSS on Serve, Stroke, Volley), running at a fifth of his speed with almost no stamina -> extras/hst_bigger_chief/ (committed: it holds no game data).
 
 Also written to out/mods/hst_bigger_chief/, so a dev's mods/hst-mods link loads him like the packaged mods. He's an
 optional mod: players install him from the mod store (or copy extras/hst_bigger_chief into the game's mods folder).
@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
-VERSION = "8"
+VERSION = "9"
 
 MOD = {
     "standard": 1,
@@ -36,8 +36,8 @@ MOD = {
     "size_why": "1.5x Big Chief's size",
     "run_speed": 0.2,
     "stats": "S",
-    "shots": {"serve": {"power": 1.4}, "stroke": 9, "volley": 10},
-    "stats_why": "every cell the roster best (S); Kent strokes and Lola volleys, and his own serve hit 1.4x as fast (200 mph+ at the top of his toss)",
+    "shots": {"serve": {"power": 1.4}, "stroke": {"from": 9, "power": 1.15}, "volley": {"from": 10, "power": 1.15}},
+    "stats_why": "every cell the roster best (S); Kent strokes and Lola volleys at 1.15x, his own serve at 1.4x (200 mph+ at the top of his toss); card SSSAC",
     "joke": True,
     "version": VERSION,
 }
