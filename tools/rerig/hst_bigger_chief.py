@@ -1,5 +1,5 @@
-"""Bigger Chief (opentennis task M11): HST's Big Chief (pc07) 1.5x as big, the roster's best stats, serves 3x and
-shots 2x as fast, running at a fifth of his speed with almost no stamina -> extras/hst_bigger_chief/ (committed: it holds no game data).
+"""Bigger Chief (opentennis task M11): HST's Big Chief (pc07) 1.5x as big, the roster's best stats, Kent's strokes and
+Lola's volleys on his own serve (the hardest of each), running at a fifth of his speed with almost no stamina -> extras/hst_bigger_chief/ (committed: it holds no game data).
 
 Also written to out/mods/hst_bigger_chief/, so a dev's mods/hst-mods link loads him like the packaged mods. He's an
 optional mod: players install him from the mod store (or copy extras/hst_bigger_chief into the game's mods folder).
@@ -7,7 +7,7 @@ optional mod: players install him from the mod store (or copy extras/hst_bigger_
 python3 tools/rerig/hst_bigger_chief.py
 
 Only a mod.json: `disc_body` plays pc07's own costumes, faces, racket and voice from the player's disc (standard §6),
-`scale`/`run_speed`/`stats`/`serve_speed`/`shot_speed` do the rest. Nothing from the disc is read or written here.
+`scale`/`run_speed`/`stats`/`shots` do the rest. Nothing from the disc is read or written here.
 """
 import json
 import os
@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
-VERSION = "5"
+VERSION = "7"
 
 MOD = {
     "standard": 1,
@@ -36,8 +36,8 @@ MOD = {
     "size_why": "1.5x Big Chief's size",
     "run_speed": 0.2,
     "stats": "S",
-    "serve_speed": 3,
-    "shot_speed": 2,
+    "shots": {"stroke": 9, "volley": 10},
+    "stats_why": "every cell the roster best (S); Kent strokes and Lola volleys on top of its donor serve, the hardest of each",
     "joke": True,
     "version": VERSION,
 }

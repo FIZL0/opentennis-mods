@@ -21,8 +21,11 @@
   "size_why": "1.5x Big Chief's size",
   "run_speed": 0.2,
   "stats": "S",
-  "serve_speed": 3,
-  "shot_speed": 2,
+  "shots": {
+    "stroke": 9,
+    "volley": 10
+  },
+  "stats_why": "every cell the roster best (S); Kent strokes and Lola volleys on top of its donor serve, the hardest of each",
   "joke": true,
-  "version": "5"
+  "version": "7"
 }
