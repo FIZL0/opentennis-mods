@@ -103,8 +103,16 @@ Tennis-useful: `chr_*_lp`, `st_*` (idle), `rslt_win/vict/loss/clap/wait`, `ga_*`
      node tree (starts at "\0\0\0\x08SMF2Root"), then dynamics records to EOF (*Dynamics* below)
 ```
 
-Material names carry flags: `__ds` = double-sided, `__ShadowF` = (shadow-related). `_o` = 8-bit occlusion-ish mask,
-`_s` = specular mask (both DDS with DDPF_ALPHA, 8 bpp, which Pillow rejects — decoded by hand in `dds.py`).
+Material names carry flags: `__ds` = double-sided, `__ShadowF` = (shadow-related). `_o` = baked ambient occlusion
+(slot 1), `_s` = specular mask (both DDS with DDPF_ALPHA, 8 bpp, which Pillow rejects — decoded by hand in `dds.py`).
+`_o` is an artist bake at half or quarter of the colour map's size, in the colour map's own UVs (a mesh's UV sets
+are identical copies). It shades creases, under the hood and collar, between fingers and inside the skirt, and it goes
+fully black on hidden inner faces. Face maps stay light (minimum about 154 of 255). On characters the vertex colours
+are almost all 255, so all of the shading is in `_o`. Course meshes are the other way round: they carry their shade
+in vertex colours (about 18% of vertices are below 250). The shaders (`common/main.xb0/shader/*.fpo`, a Cg uber-shader
+picked by feature bits in the file name) take vertex-lit `ambient`/`diffuse`/`specular` inputs, `g_TextureMap0..5`, a
+normal map and a shadow map. Whether `_o` scales only the ambient term or all of the light is unknown, because the
+RSX microcode hasn't been disassembled.
 
 **Mesh block** (found by signature scan in `rem.py: _find_meshes`; the bytes between meshes hold cloth/spring
 setups (`h_mimi`, `hane1`, `skirt`, `uwagi` …, not decoded) and morph blocks (decoded, see below), so the scan locates each block
