@@ -6,6 +6,7 @@ sorted. So the cast keeps Get a Grip's relative strengths but only ever gets val
 columns stay integers, `a/b/c` cells are whole HST cells). Columns with no Get a Grip source stay the donor row's.
 """
 import csv
+import itertools
 import io
 import os
 
@@ -238,11 +239,83 @@ def stable(s):
     return int(hashlib.sha1(s.encode()).hexdigest(), 16)
 
 
+def card_scores(cells, power):
+    """The remaster's select-card score per category (hst-base grades.rs `scores`): `cells` the mod's row, `power`
+    the rows whose serve, strokes and volleys it hits."""
+    v = lambda r, c: float(str(r[c]).split("/")[0])
+    serve, stroke, volley = v(power[0], 12), v(power[1], 13), v(power[2], 14)
+    return [serve + 0.1 * v(cells, 22), stroke + 0.1 * v(cells, 17), volley - 0.25 * stroke + 0.1 * v(cells, 21),
+            v(cells, 28) - 0.1 * serve, v(cells, 40) - 0.01 * v(cells, 57)]
+
+
+def card_grades(cells, power, rows, grades):
+    """The select card's letters (grades.rs `grades_of`, 6 = S): cuts halfway between the stock grades."""
+    stock = [card_scores(r, [r, r, r]) for r in rows]
+    own = card_scores(cells, power)
+    out = []
+    for k in range(5):
+        at = [(sc[k], grades[int(r[0])][k]) for sc, r in zip(stock, rows)]
+        def cut(g):
+            lo = [x for x, h in at if h < g]
+            hi = [x for x, h in at if h >= g]
+            return (max(lo) + min(hi)) / 2 if lo and hi else float("inf")
+        g = sum(own[k] > cut(g) for g in range(1, 6))
+        out.append(6 if g == 5 and own[k] > 2 * max(x for x, _ in at) - cut(5) else g)
+    return out
+
+
+def graded_cells(manifest, head, rows, grades):
+    """The mod's row as the game builds it for the card's columns: base, `scale`, `stats` (each category's cells the
+    mean of its grade's stock rows, grades.rs `graded_row`), overrides."""
+    by = {int(r[0]): r for r in rows}
+    cells = list(by[manifest["params"]["base"]])
+    cells[57] = str(int(float(cells[57]) * manifest.get("scale", 1.0) + 0.5))
+    stats = manifest["stats"]
+    stats = stats * 5 if len(stats) == 1 else stats
+    for k, cols in enumerate(CATEGORIES):
+        want = min("FEDCBAS".index(stats[k]), 5)  # ponytail: S taken as A here; the card scores S rows anyway
+        near = min({g[k] for g in grades}, key=lambda g: abs(g - want))
+        group = [r for r in rows if grades[int(r[0])][k] == near]
+        for c in (22, 17, 21, 28, 40):
+            if c in cols:
+                parts = [r[c].split("/") for r in group]
+                cells[c] = "/".join(str(int(sum(float(p[i]) for p in parts) / len(parts) + 0.5)) for i in range(len(parts[0])))
+    for col, val in manifest["params"].get("override", {}).items():
+        cells[head.index(squash(col))] = str(val)
+    return cells
+
+
+def pick_shots(manifest, path, grades):
+    """§6 `shots`: whose serve, strokes and volleys a mod with `stats` hits so its select card reads its `stats`: its
+    donor's where they do, else (by id) Lola's slice-special serve when it fits, or another that fits. Returns the
+    card's letters (its stats unless no mix fits; then the nearest)."""
+    head, rows = tparam(path)
+    by = {int(r[0]): r for r in rows}
+    cells = graded_cells(manifest, head, rows, grades)
+    stats = manifest["stats"] * (5 if len(manifest["stats"]) == 1 else 1)
+    want = ["FEDCBAS".index(c) for c in stats]
+    donor, h = manifest["donor"], stable(manifest["id"])
+    best = None
+    for mix in itertools.product(range(14), repeat=3):
+        got = card_grades(cells, [by[c] for c in mix], rows, grades)
+        miss = sum(abs(a - b) for a, b in zip(got, want))
+        cost = (miss, sum(c != donor for c in mix), -(mix[0] == 10 and h % 2), stable(f"{manifest['id']}{mix}"))
+        if best is None or cost < best[0]:
+            best = (cost, mix, got)
+    _, mix, got = best
+    shots = {k: c for k, c in zip(("serve", "stroke", "volley"), mix) if c != donor}
+    if "smash" in manifest.get("shots", {}):
+        shots["smash"] = manifest["shots"]["smash"]
+    manifest.pop("shots", None)
+    if shots:
+        manifest["shots"] = shots
+    return "".join("FEDCBAS"[g] for g in got)
+
+
 def graded(manifest, path, grades):
     """Gives a mod (after `expert`) its `stats` from its row's standing (TEMPLATES, its own suits ranked as its row
-    ranks them) and `shots`: a stock serve of that Serve grade (its donor's if it has it, else Lola's slice-special
-    serve or another of the grade, by id), Kent's strokes for an A Stroke, Lola's or Will's volleys for an A
-    Volley. Drops the graded columns' overrides (the grades set them). Returns the why, or None (kept, or done)."""
+    ranks them) and `shots` that make its select card read them (`pick_shots`). Drops the graded columns' overrides
+    (the grades set them). Returns the why, or None (kept, or done)."""
     if manifest["id"] in GRADED_KEEP or "stats" in manifest or "params" not in manifest:
         return None
     head, rows = tparam(path)
@@ -260,24 +333,17 @@ def graded(manifest, path, grades):
     for k, v in zip(sorted([0, 1, 2, 4], key=lambda k: -sc[k]), suits):
         g[k] = v
     g[3] = impact + (max(range(5), key=lambda k: sc[k]) == 3 and impact < 2)
-    donor = manifest["donor"]
-    shots = {}
-    serve = [c for c in range(14) if grades[c][0] == g[0]]
-    if donor not in serve:
-        shots["serve"] = 10 if 10 in serve and h % 2 else serve[(h >> 4) % len(serve)]
-    if g[1] == 5 and grades[donor][1] != 5:
-        shots["stroke"] = 9
-    if g[2] == 5 and grades[donor][2] != 5:
-        shots["volley"] = (10, 11)[(h >> 8) % 2]
     graded_cols = {c for cols in CATEGORIES for c in cols}
     for col in [col for col in o if head.index(squash(col)) in graded_cols]:
         del o[col]
-    letters = "".join("FEDCBA"[v] for v in g)
-    manifest["stats"] = letters
-    if shots:
-        manifest["shots"] = shots
+    manifest["stats"] = "".join("FEDCBA"[v] for v in g)
+    card = pick_shots(manifest, path, grades)
+    if card != manifest["stats"]:  # a grade no mix reaches (Footwork is its own row's): take what it plays at
+        manifest["stats"] = card
+        card = pick_shots(manifest, path, grades)
     why = (f"its row's category scores {' '.join(f'{x:.2f}' for x in sc)} (mean {mean:.3f}) -> tier {tier} of "
-           f"tools/rerig/gag_stats.py TEMPLATES, best suit first; shots {shots or 'all its donor'}")
+           f"tools/rerig/gag_stats.py TEMPLATES, best suit first; shots {manifest.get('shots') or 'all its donor'}"
+           f" (card {card})")
     manifest["stats_why"] = why
     return why
 

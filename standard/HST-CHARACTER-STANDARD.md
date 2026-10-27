@@ -287,10 +287,12 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
 - `stats` (optional): the character select's five grades, as one letter `"F"` to `"A"` (or `"S"`) for all of them or
   five in the order Serve, Stroke, Volley, Impact, Footwork (`"BACEB"`): each grade's `TParam.csv` cells become the
   mean of the stock characters' cells at that grade (power, spin, control, timing windows, speed, stamina). `"S"`
-  takes each cell at the best any stock character has (the select shows it as A). Applies after `scale`, before
-  `params.override`, so don't also override a graded column. Shot speeds stay within the stock game's (its trajectory
-  tables), so the select's Serve grade is the grade of the character whose serve it hits (`donor`, or `shots.serve`):
-  pick that one to match. Without `stats` the select shows, per grade, the stock character nearest its row.
+  takes each cell at the best any stock character has. Applies after `scale`, before `params.override`, so don't also
+  override a graded column. The select card doesn't show `stats`: it grades how the character plays, by the formula
+  the stock grades follow (`tools/rerig/gag_stats.py` `card_grades`): Serve, Stroke and Volley mostly the power of
+  whoever's serve, strokes and volleys it hits (`donor`, or `shots`), Impact its early rally-hit window, Footwork its
+  speed. So pick `shots` to match (`gag_stats.pick_shots` does). A score as far past the roster's best as that is
+  past A shows S.
 - `shots` (optional, `{"serve": 10, "stroke": 9, "volley": 11, "smash": 7}`, any of the four, stock characters 0–13):
   whose serve (with its special serves), groundstrokes, volleys or smash it hits: that character's trajectory tables,
   shot records and timing, in place of `donor`'s. Mix the best or worst of different characters.
