@@ -259,6 +259,7 @@ def main():
                     "todo": ["motions are the donor's; the umpire's own chair clips (_h/_r/_l) are seated and not used"]}
         if gag_stats.find_tparam(ROOT):
             gag_stats.expert(manifest, gag_stats.find_tparam(ROOT), chars)
+            gag_stats.graded(manifest, gag_stats.find_tparam(ROOT), gag_stats.load_grades(ROOT))
         json.dump(manifest, open(os.path.join(mod, "mod.json"), "w"), indent=1, ensure_ascii=False)
         print(f"{mod}: Bip01 {h:.3f} m, donor {donor['name']}")
 

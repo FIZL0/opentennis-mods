@@ -447,6 +447,7 @@ def main():
                 manifest["todo"].append("confirm handedness")
             if tp:
                 gagmap.expert(manifest, tp, hst)
+                gagmap.graded(manifest, tp, grades)
             old = os.path.join(mod, "mod.json")
             if os.path.exists(old) and "version" in (prev := json.load(open(old))):
                 manifest["version"] = prev["version"]  # bumped by hand before an upload (opentennis AGENT.md)

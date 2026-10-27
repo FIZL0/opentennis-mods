@@ -284,21 +284,26 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
   contact, stay timed to their contact as any character's.
 - `run_speed` (optional, 0.1–4, default 1): the character runs this many times as fast (its `SPE` stat × this; the
   stamina and AI read the same paced stat). The run cycle animation plays at the donor's pace.
-- `stats` (optional, `"F"` to `"A"`, or `"S"`): every one of the character select's five grades (Serve, Stroke, Volley,
-  Impact, Footwork) at this one: each grade's `TParam.csv` cells become the mean of the stock characters' cells at
-  that grade (power, spin, control, timing windows, speed, stamina). The select shows the grades it ends up with.
-  `"S"` takes each cell at the best any stock character has. Applies after `scale`, before `params.override`. Shot
-  speeds stay within the stock game's (its trajectory tables).
+- `stats` (optional): the character select's five grades, as one letter `"F"` to `"A"` (or `"S"`) for all of them or
+  five in the order Serve, Stroke, Volley, Impact, Footwork (`"BACEB"`): each grade's `TParam.csv` cells become the
+  mean of the stock characters' cells at that grade (power, spin, control, timing windows, speed, stamina). `"S"`
+  takes each cell at the best any stock character has (the select shows it as A). Applies after `scale`, before
+  `params.override`, so don't also override a graded column. Shot speeds stay within the stock game's (its trajectory
+  tables), so the select's Serve grade is the grade of the character whose serve it hits (`donor`, or `shots.serve`):
+  pick that one to match. Without `stats` the select shows, per grade, the stock character nearest its row.
+- `shots` (optional, `{"serve": 10, "stroke": 9, "volley": 11, "smash": 7}`, any of the four, stock characters 0–13):
+  whose serve (with its special serves), groundstrokes, volleys or smash it hits: that character's trajectory tables,
+  shot records and timing, in place of `donor`'s. Mix the best or worst of different characters.
 - `serve_speed`, `shot_speed` (optional, whole numbers 1 to 4): its serves / other shots (not lobs) fly this many times as fast
   until their first bounce, along the same path (so they land where they were aimed).
-- A mod with `disc_body`, `scale`, `swing_speed`, `run_speed`, `stats`, `serve_speed` or `shot_speed` doesn't play online yet: the online lobby refuses it.
+- A mod with `disc_body`, `scale`, `swing_speed`, `run_speed`, `serve_speed` or `shot_speed` doesn't play online yet: the online lobby refuses it.
 - `face`: `morph` (§4a channels), `texture` (§4b, needs `face.json`) or `none` (no face animation).
 - `eyes` (optional): the glTF material names of the eyes, moved by the donor's `.UVA` eye track (§4c).
 - The HST loader (`crates/hst-base/src/mods.rs`) rejects a mod with `<path>: <reason>` when the manifest is off
-  (`standard` ≠ 1, a missing costume, a `costume_of` whose `donor`/`base`/`ai_row` differ from it or that overrides params, a `disc_body` that isn't `true`/`false`, lists `costumes`, has a `face` other than `morph` or is a `costume_of`, a `scale`/`swing_speed`/`run_speed` out of its range, a `stats` that is no grade F–A or S, a `serve_speed`/`shot_speed` that isn't 1–4 or a `scale` without `disc_body`, `donor`/`base`/`ai_row` outside 0–13, `hand` not right/left, an `override`
+  (`standard` ≠ 1, a missing costume, a `costume_of` whose `donor`/`base`/`ai_row` differ from it or that overrides params, a `disc_body` that isn't `true`/`false`, lists `costumes`, has a `face` other than `morph` or is a `costume_of`, a `scale`/`swing_speed`/`run_speed` out of its range, a `stats` that is not one or five grades F–A or S, a `shots` key other than serve/stroke/volley/smash or a character outside 0–13, a `serve_speed`/`shot_speed` that isn't 1–4 or a `scale` without `disc_body`, `donor`/`base`/`ai_row` outside 0–13, `hand` not right/left, an `override`
   key that is no TParam column, an `eyes` that is not a list of names, a `motions` file that is missing, names no motion the donor has or, other than the four reactions, is shorter than the donor's clip) or a costume fails §7's FAIL checks; WARN checks are logged. Buffers and images
   must be embedded in the `.glb`; it skips glTF accessor validation (older rerig output lacks POSITION min/max).
-- Optional, informational: `donor_why`, `size_why` (how the height and head were set), `racket_why`, `source_stats` (the source game's raw stats), `params_why` (per overridden column: source stat, value, rank → HST value), `ai_row_why`, `motions_why`, `voice_counts`, and `todo`
+- Optional, informational: `donor_why`, `size_why` (how the height and head were set), `racket_why`, `source_stats` (the source game's raw stats), `params_why` (per overridden column: source stat, value, rank → HST value), `ai_row_why`, `stats_why`, `motions_why`, `voice_counts`, and `todo`
   (what a human or agent still has to decide). A loader ignores unknown keys.
 
 ## 7. Conformance

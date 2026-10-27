@@ -183,6 +183,105 @@ def expert(manifest, path, hst):
     return ch
 
 
+# opentennis: each mod's own grades (§6 `stats`) and whose serve/strokes/volleys it hits (§6 `shots`), shaped like
+# HST's expert row: a strong suit or two, a weak one, a low Impact; a few stronger outliers.
+CATEGORIES = [[12, 22, 54], [13, 15, 16, 17, 18, 19, 20, 26, 34, 35, 46, 50, 53], [14, 21, 37, 38, 48, 51],
+              [28, 29, 30, 31, 32, 33], [40, 41, 42, 43]]  # TParam columns of Serve, Stroke, Volley, Impact, Footwork
+GRADED_KEEP = KEEP | {"oob_pc02_sophie"}
+# by the mod's overall standing (its mean category score, TIERS): templates, one picked by id: the letters its
+# Serve/Stroke/Volley/Footwork take (0 F … 5 A), best suit first, and its Impact; the sum (A = 5) in the comment.
+TEMPLATES = [[((5, 3, 2, 2), 1), ((4, 3, 3, 2), 1)],  # Kent-like, 13: one big suit or none
+             [((5, 4, 3, 3), 1), ((4, 4, 4, 4), 1), ((5, 4, 4, 2), 1)],  # Lola-like 16, Miranda-like 17, lopsided 16
+             [((5, 5, 4, 3), 0)],  # Will-like, 17
+             [((5, 5, 4, 3), 2)]]  # outlier, 19
+TIERS = (0.48, 0.597, 0.605)  # set on the 2026-10-27 roster: about its bottom fifth, middle, top 7 %, top 5 %
+
+
+def load_grades(root):
+    """The disc's select-screen grades by character ([Serve, Stroke, Volley, Impact, Footwork], 0 F … 5 A): the file
+    HST_GRADES names, else the remaster's `grades` tool on its disc image."""
+    import subprocess
+    if os.environ.get("HST_GRADES"):
+        text = open(os.environ["HST_GRADES"]).read()
+    else:
+        hst = os.path.join(root, "../opentennis")
+        iso = os.path.join(hst, "Hot Shots Tennis (USA).iso")
+        text = subprocess.run(["cargo", "run", "-q", "-p", "hst-data", "--bin", "grades", "--", iso], cwd=hst,
+                              capture_output=True, text=True, check=True).stdout
+    return [[int(v) for v in line.split()] for line in text.splitlines() if line.strip()]
+
+
+def scores(cells, rows, grades):
+    """How good `cells` (a TParam row) is in each category, 0 … 1: per column its place among the stock rows,
+    flipped where the stock grades fall as the column rises, averaged."""
+    out = []
+    for k, cols in enumerate(CATEGORIES):
+        g = [grades[int(r[0])][k] for r in rows]
+        mg = sum(g) / len(g)
+        vals = []
+        for c in cols:
+            stock = [r[c] for r in rows]
+            if len({key(v) for v in stock}) < 2:
+                continue
+            ps = [place(v, stock) for v in stock]
+            mp = sum(ps) / len(ps)
+            corr = sum((a - mp) * (b - mg) for a, b in zip(ps, g))
+            if corr:
+                x = place(cells[c], stock)
+                vals.append(x if corr > 0 else 1 - x)
+        out.append(sum(vals) / len(vals) if vals else 0.5)
+    return out
+
+
+def stable(s):
+    import hashlib
+    return int(hashlib.sha1(s.encode()).hexdigest(), 16)
+
+
+def graded(manifest, path, grades):
+    """Gives a mod (after `expert`) its `stats` from its row's standing (TEMPLATES, its own suits ranked as its row
+    ranks them) and `shots`: a stock serve of that Serve grade (its donor's if it has it, else Lola's slice-special
+    serve or another of the grade, by id), Kent's strokes for an A Stroke, Lola's or Will's volleys for an A
+    Volley. Drops the graded columns' overrides (the grades set them). Returns the why, or None (kept, or done)."""
+    if manifest["id"] in GRADED_KEEP or "stats" in manifest or "params" not in manifest:
+        return None
+    head, rows = tparam(path)
+    by = {int(r[0]): r for r in rows}
+    o = manifest["params"].get("override", {})
+    cells = list(by[manifest["params"]["base"]])
+    for col, v in o.items():
+        cells[head.index(squash(col))] = str(v)
+    sc = scores(cells, rows, grades)
+    mean = sum(sc) / 5
+    h = stable(manifest["id"])
+    tier = sum(mean >= t for t in TIERS)
+    suits, impact = TEMPLATES[tier][h % len(TEMPLATES[tier])]
+    g = [0] * 5
+    for k, v in zip(sorted([0, 1, 2, 4], key=lambda k: -sc[k]), suits):
+        g[k] = v
+    g[3] = impact + (max(range(5), key=lambda k: sc[k]) == 3 and impact < 2)
+    donor = manifest["donor"]
+    shots = {}
+    serve = [c for c in range(14) if grades[c][0] == g[0]]
+    if donor not in serve:
+        shots["serve"] = 10 if 10 in serve and h % 2 else serve[(h >> 4) % len(serve)]
+    if g[1] == 5 and grades[donor][1] != 5:
+        shots["stroke"] = 9
+    if g[2] == 5 and grades[donor][2] != 5:
+        shots["volley"] = (10, 11)[(h >> 8) % 2]
+    graded_cols = {c for cols in CATEGORIES for c in cols}
+    for col in [col for col in o if head.index(squash(col)) in graded_cols]:
+        del o[col]
+    letters = "".join("FEDCBA"[v] for v in g)
+    manifest["stats"] = letters
+    if shots:
+        manifest["shots"] = shots
+    why = (f"its row's category scores {' '.join(f'{x:.2f}' for x in sc)} (mean {mean:.3f}) -> tier {tier} of "
+           f"tools/rerig/gag_stats.py TEMPLATES, best suit first; shots {shots or 'all its donor'}")
+    manifest["stats_why"] = why
+    return why
+
+
 if __name__ == "__main__":
     # python3 tools/rerig/gag_stats.py [out/mods]: move the packed mods into the expert band in place (once each)
     import glob
