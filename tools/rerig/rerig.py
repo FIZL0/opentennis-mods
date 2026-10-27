@@ -76,6 +76,12 @@ FACE_PICKS = {
     "fore_pc21_hubert": {"doki_mouth": "vexing_mouth"},  # jaw dropped
     "fore_pc22_ratchet": {"joy_eye": "blink_eye"},  # closed happy eyes
     "fore_pc23_jak": {"sorrow_mouth": "vexing_mouth"},  # flat grimace
+    # Sackboy (opentennis B686): his targets are face parts (m_ mouth, b_ brows, e_ lids), no moods
+    "oob_pc19_sackboy": {"blink_eye": "eye_m",  # eye buttons gone: shut
+                         "joy_eye": "e_R_up+e_L_up", "joy_mouth": "m_laugh",  # lowered lids; open grin
+                         "anger_eye": "b_angry", "anger_mouth": "m_R_grrr+m_L_grrr",  # knit brows; bared teeth
+                         "sorrow_eye": "b_worried", "sorrow_mouth": "m_R_down+m_L_down",  # upturned brows; frown
+                         "doki_eye": "b_R_up+b_L_up", "doki_mouth": "m_T_ooo+m_B_ooo"},  # raised brows; open O
 }
 
 
@@ -286,8 +292,9 @@ def face_names(names, key=None):
             want = f"{ch}_{part}"
             if want in short or (ch == "blink" and part == "mouth"):
                 continue
-            if picks.get(want) in short:
-                alias.append((want, [short.index(picks[want])]))
+            pick = picks.get(want, "").split("+")  # `+` sums targets, as FACE_NAMES
+            if all(k in short for k in pick):
+                alias.append((want, [short.index(k) for k in pick]))
                 continue
             for w in words:
                 hits = [(p[3], p[2], i) for i, p in enumerate(parsed) if p and p[0] == w and p[1] == part]

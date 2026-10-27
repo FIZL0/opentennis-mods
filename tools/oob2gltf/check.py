@@ -142,8 +142,10 @@ def posed_meshes(m, anim=None, t=0.0, weights=None):
                     sel = js[:, k] == j
                     sp[sel] += ws[sel, k, None] * (pos[sel] @ J[j].T)[:, :3]
             mat = g['materials'][p['material']]
-            tex = m.image(mat['pbrMetallicRoughness']['baseColorTexture']['index'])
-            out.append((sp, m.acc(p['indices']).reshape(-1, 3), m.acc(at['TEXCOORD_0']), tex, (200, 200, 200)))
+            pbr = mat.get('pbrMetallicRoughness', {})
+            tex = m.image(pbr['baseColorTexture']['index']) if 'baseColorTexture' in pbr else None  # flat colour
+            col = tuple(int(255 * c) for c in pbr.get('baseColorFactor', [0.8] * 3)[:3])
+            out.append((sp, m.acc(p['indices']).reshape(-1, 3), m.acc(at['TEXCOORD_0']) if tex is not None else None, tex, col))
     return out
 
 
@@ -154,7 +156,8 @@ def face_sheet(model, out, cols=5):
     face = next(n for n in m.g['nodes'] if n.get('name') == 'face')
     names = m.g['meshes'][face['mesh']]['extras']['targetNames']
     ms0 = posed_meshes(m)
-    fp = np.concatenate([m.acc(p['attributes']['POSITION']) for p in m.g['meshes'][face['mesh']]['primitives']])
+    first = sum(len(m.g['meshes'][n['mesh']]['primitives']) for n in m.g['nodes'][:m.g['nodes'].index(face)] if 'mesh' in n)
+    fp = np.concatenate([ms[0] for ms in ms0[first:first + len(m.g['meshes'][face['mesh']]['primitives'])]])  # posed (rerig scales)
     lo, hi = fp.min(0), fp.max(0)
     c = (lo + hi) / 2
     r = max(hi[0] - lo[0], hi[1] - lo[1]) * 0.45
