@@ -189,9 +189,9 @@ def expert(manifest, path, hst):
 CATEGORIES = [[12, 22, 54], [13, 15, 16, 17, 18, 19, 20, 26, 34, 35, 46, 50, 53], [14, 21, 37, 38, 48, 51],
               [28, 29, 30, 31, 32, 33], [40, 41, 42, 43]]  # TParam columns of Serve, Stroke, Volley, Impact, Footwork
 GRADED_KEEP = KEEP | {"oob_pc02_sophie"}
-# 2026-10-27 (user): these three now declare `stats` too (their own grades, cells nudged to those grades' means). Their
-# manifests from before are in kept_before_stats.json: to revert one, write its entry back over out/mods/<id>/mod.json
-# and bump `version` past the current one.
+# 2026-10-27 (user): these three keep their own exact cells and no `stats`: declaring them (cells set to their grades'
+# means) made them play worse, so they were reverted from kept_before_stats.json. The card already reads their rows by
+# formula. `stats` is coarse by design (a grade's mean); a mod that must play exactly as tuned uses `params.override`.
 # by the mod's overall standing (its mean category score, TIERS): templates, one picked by id: the letters its
 # Serve/Stroke/Volley/Footwork take (0 F … 5 A), best suit first, and its Impact; the sum (A = 5) in the comment.
 TEMPLATES = [[((5, 3, 2, 2), 1), ((4, 3, 3, 2), 1)],  # Kent-like, 13: one big suit or none
