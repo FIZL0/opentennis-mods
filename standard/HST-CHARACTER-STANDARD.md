@@ -296,11 +296,16 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
 - `shots` (optional, `{"serve": 10, "stroke": 9, "volley": 11, "smash": 7}`, any of the four, stock characters 0–13):
   whose serve (with its special serves), groundstrokes, volleys or smash it hits: that character's trajectory tables,
   shot records and timing, in place of `donor`'s. Mix the best or worst of different characters.
+  An entry may instead be `{"from": 10, "power": 1.4}` (either key optional; no `from` = `donor`'s shots): `power`
+  (0.5–2, 1 = stock) hits that class's shots that many times as fast, each still landing where the stock shot would
+  (it flies flatter; a shot that would no longer clear the net gets less of the boost). The ball tops out near
+  268 mph whatever the power. Lobs, drop shots and the underhand serve stay stock. A mod with a `power` doesn't play
+  online yet.
 - A mod with `disc_body`, `scale`, `swing_speed`, or `run_speed` doesn't play online yet: the online lobby refuses it.
 - `face`: `morph` (§4a channels), `texture` (§4b, needs `face.json`) or `none` (no face animation).
 - `eyes` (optional): the glTF material names of the eyes, moved by the donor's `.UVA` eye track (§4c).
 - The HST loader (`crates/hst-base/src/mods.rs`) rejects a mod with `<path>: <reason>` when the manifest is off
-  (`standard` ≠ 1, a missing costume, a `costume_of` whose `donor`/`base`/`ai_row` differ from it or that overrides params, a `disc_body` that isn't `true`/`false`, lists `costumes`, has a `face` other than `morph` or is a `costume_of`, a `scale`/`swing_speed`/`run_speed` out of its range, a `stats` that is not one or five grades F–A or S, a `shots` key other than serve/stroke/volley/smash or a character outside 0–13 or a `scale` without `disc_body`, `donor`/`base`/`ai_row` outside 0–13, `hand` not right/left, an `override`
+  (`standard` ≠ 1, a missing costume, a `costume_of` whose `donor`/`base`/`ai_row` differ from it or that overrides params, a `disc_body` that isn't `true`/`false`, lists `costumes`, has a `face` other than `morph` or is a `costume_of`, a `scale`/`swing_speed`/`run_speed` out of its range, a `stats` that is not one or five grades F–A or S, a `shots` key other than serve/stroke/volley/smash, a character outside 0–13, an entry object with keys other than `from`/`power` or a `power` outside 0.5–2 or a `scale` without `disc_body`, `donor`/`base`/`ai_row` outside 0–13, `hand` not right/left, an `override`
   key that is no TParam column, an `eyes` that is not a list of names, a `motions` file that is missing, names no motion the donor has or, other than the four reactions, is shorter than the donor's clip) or a costume fails §7's FAIL checks; WARN checks are logged. Buffers and images
   must be embedded in the `.glb`; it skips glTF accessor validation (older rerig output lacks POSITION min/max).
 - Optional, informational: `donor_why`, `size_why` (how the height and head were set), `racket_why`, `source_stats` (the source game's raw stats), `params_why` (per overridden column: source stat, value, rank → HST value), `ai_row_why`, `stats_why`, `motions_why`, `voice_counts`, and `todo`

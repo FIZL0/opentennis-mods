@@ -17,7 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(HERE))
 OUTS = [os.path.join(ROOT, d, "hst_bigger_chief") for d in ("extras", "out/mods")]
 
 # bump on any change to the manifest, so the mod store sees an update
-VERSION = "7"
+VERSION = "8"
 
 MOD = {
     "standard": 1,
@@ -36,8 +36,8 @@ MOD = {
     "size_why": "1.5x Big Chief's size",
     "run_speed": 0.2,
     "stats": "S",
-    "shots": {"stroke": 9, "volley": 10},
-    "stats_why": "every cell the roster best (S); Kent strokes and Lola volleys on top of its donor serve, the hardest of each",
+    "shots": {"serve": {"power": 1.4}, "stroke": 9, "volley": 10},
+    "stats_why": "every cell the roster best (S); Kent strokes and Lola volleys, and his own serve hit 1.4x as fast (200 mph+ at the top of his toss)",
     "joke": True,
     "version": VERSION,
 }
