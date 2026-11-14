@@ -30,6 +30,7 @@ from rerig import binds  # noqa: E402
 import racket  # noqa: E402
 import colour  # noqa: E402
 import edge_clamp  # noqa: E402
+from check import PART_JOINTS, wide_parts  # noqa: E402
 import claps  # noqa: E402
 import face_alias  # noqa: E402
 import sizing  # noqa: E402
@@ -376,6 +377,9 @@ def main():
                 face_alias.add_aliases(os.path.join(mod, "model", os.path.basename(c)))
                 # textures sampled right at their edge clamp there: no seam down a mirrored face (opentennis B584)
                 edge_clamp.clamp(os.path.join(mod, "model", os.path.basename(c)))
+                # a primitive over the uniform skin layout's joints renders wrong on some phones: refuse the build
+                if wide := wide_parts(*glb.read(os.path.join(mod, "model", os.path.basename(c)))):
+                    sys.exit(f"{c}: more than {PART_JOINTS} weighted joints in a primitive ({', '.join(wide)}); split it")
             g, b = glb.read(costumes[0])
             h = -binds(g, b)[0]["Bip01"][1, 3]
             pool, why = hst, "nearest Bip01 height"

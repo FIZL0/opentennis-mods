@@ -18,7 +18,30 @@ sys.path.insert(0, HERE)
 import glb  # noqa: E402
 from rerig import CHILD, binds, load_standard, read, worlds  # noqa: E402
 
+# the most joints one primitive may weight: the game draws each primitive as its own part, and phones without storage
+# buffers for skinning (Bevy's uniform skin layout) hold 256 joint matrices per draw (opentennis B706)
+PART_JOINTS = 256
+
 REQUIRED = ["joy_eye", "joy_mouth", "anger_eye", "anger_mouth", "sorrow_eye", "sorrow_mouth", "doki_eye", "doki_mouth"]
+
+
+def wide_parts(g, b):
+    """The skinned primitives weighting more than PART_JOINTS joints, as `mesh/material: N joints`."""
+    out = []
+    for n in g["nodes"]:
+        if "mesh" not in n or "skin" not in n:
+            continue
+        m = g["meshes"][n["mesh"]]
+        for p in m["primitives"]:
+            a = p["attributes"]
+            if "JOINTS_0" not in a or "WEIGHTS_0" not in a:
+                continue
+            j, w = read(g, b, a["JOINTS_0"]), read(g, b, a["WEIGHTS_0"])
+            used = len(np.unique(j[w != 0]))
+            if used > PART_JOINTS:
+                mat = g.get("materials", [{}])[p["material"]].get("name", "?") if "material" in p else "?"
+                out.append(f"{m.get('name', '?')}/{mat}: {used} joints")
+    return out
 
 
 def check(path):
@@ -68,6 +91,8 @@ def check(path):
                 over4 += int("JOINTS_1" in a)
     ok(feet and abs(max(feet)) < 0.06, f"feet at y=0 (lowest point {max(feet) if feet else float('nan'):.3f})", "WARN")
     ok(not over4 and not badsum, f"≤4 weights per vertex, sums 1 ({badsum} bad sums)")
+    wide = wide_parts(g, b)
+    ok(not wide, f"≤{PART_JOINTS} weighted joints per primitive{' — split ' + ', '.join(wide) if wide else ''}")
     face = [c for c in REQUIRED if c not in targets]
     ok(not face, f"face channels{' — missing ' + ', '.join(face) if face else ''}", "WARN")
     ok("blink_eye" in targets, "blink_eye", "WARN")

@@ -321,7 +321,12 @@ Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, bo
 
 `python3 tools/rerig/check.py MODEL.glb [--face-sheet face.png]` checks: root `game_space`; one skin; all 54 core
 names and parents; rest = bind; each core bone's direction in its own frame within 10° of HST's (the axis rule of
-§3); Bip01 height; feet at y = 0; ≤ 4 weights summing to 1 (FAIL on any of these); the face channels and
+§3); Bip01 height; feet at y = 0; ≤ 4 weights summing to 1; ≤ 256 weighted joints per primitive (FAIL on any of these); the face channels and
 `blink_eye` (WARN — texture-face models warn by design, their faces are in `face.json`). The face sheet renders
 neutral plus each channel at weight 1. Beyond the checker, a model conforms when an HST forehand and run render
 without tearing or twisted limbs (`TUTORIAL.md` §2).
+
+The game draws each primitive as its own part, and on phones whose skinning can't use storage buffers each draw holds
+at most 256 joint matrices; a primitive whose vertices weight more joints than that would render wrong there, so the
+game and `package.py` refuse it. The skin itself may be bigger: only the joints one primitive's vertices ride count.
+Split a primitive over the limit (by material or body region).
