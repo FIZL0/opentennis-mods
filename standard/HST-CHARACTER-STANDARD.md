@@ -25,6 +25,7 @@ mods/<id>/
                            store's listing picture on upload), so it always matches how the game draws them now
   motions.glb              optional: the mod's own motions, drawn in place of the donor's (§6 `motions`)
   voice/<program>_<key>.wav  §5
+  voice-<lang>/…             §5, optional: the same takes in another language
   face.json                only for texture faces (§4b)
 ```
 
@@ -181,6 +182,21 @@ HST plays per-character voice **programs** (each a set of keys = alternative tak
 (From `opentennis/research/journal/2026-10-07-n3-audio/9-SHOUTS-FINAL.md`, `10-WHIFF-CALLS-FINAL.md`.)
 A program you ship no wav for stays silent: a mod never plays its donor's voice.
 Get a Grip's labelled cues map almost 1:1: smash→0, swing→1, receive→3, body→5, point_get/point_lost→7–10, start→6.
+
+**Other languages** (optional): the same lines in the source game's other languages, one folder each beside
+`voice/`, named in `mod.json`:
+
+```json
+"voice": "voice/", "voice_language": "en", "voice_languages": {"ja": "voice-ja/", "fr": "voice-fr/"}
+```
+
+Keys are the game's Voice Language setting's languages: `en`, `fr`, `it`, `de`, `es`, `ja`. `voice_language` says
+what `voice/` speaks (default `en`). Each folder holds files named as `voice/`'s (`<program>_<key>.wav`, same
+format). The player's Voice Language picks the folder; a take the folder lacks plays `voice/`'s, and so does every
+take in a language the mod doesn't carry. The takes and their count are always `voice/`'s (a file only in a language
+folder is never played), so the language changes only what this machine hears: the same line is drawn in every
+language, and online each player hears their own choice. `tools/rerig/voice_langs.py` builds them from a disc's
+other language copies (rules only; nothing about the lines is in git).
 
 ## 6. mod.json
 

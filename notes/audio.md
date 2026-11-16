@@ -108,3 +108,11 @@ Before this, `oob_data._bank` globbed `ga_pc_NN.xb*` and took whichever came fir
 most of the cast. Every game has English takes for every packaged line: no mod is Japanese-only.
 Checked with `tools/voice_lang.py` (faster-whisper language ID over each mod's four longest voice wavs). Short grunts
 ("えぇ?", "おいしょ") come out as ja/zh/ko at low confidence in every game; only lines with words count.
+
+The other copies are now used too (HST M168, standard §5 *Other languages*): `tools/voices.py` links them under
+`out/voices/<game>-ja/` (before, `out/voices/opentee2/` pointed into the Japanese `.xb` copy by sort order; no
+shipped mod had picked a take from it), and `tools/rerig/voice_langs.py` (also run by package.py) writes each Out of
+Bounds mod's `voice-ja/`: the Japanese bank's same cue slot for every take that is a slot's main wave or a whole
+result cue (pc01-06, 08-14; 2026-11-16: 39-41 of each mod's ~45-50 takes, checked by faster-whisper as Japanese
+saying the English take's line). Open Tee 2's picks are by wave number from English transcripts, with no slot to
+follow, so its mods carry no `voice-ja/` yet.

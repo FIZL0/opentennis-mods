@@ -32,6 +32,7 @@ import colour  # noqa: E402
 import edge_clamp  # noqa: E402
 from check import PART_JOINTS, wide_parts  # noqa: E402
 import claps  # noqa: E402
+import voice_langs  # noqa: E402
 import face_alias  # noqa: E402
 import sizing  # noqa: E402
 import gag_stats as gagmap  # noqa: E402
@@ -310,6 +311,7 @@ def golf(game, n, mod, manifest, costumes, donor, h, hst, tp, hst_type):
     manifest["voice"] = "voice/"
     manifest["voice_counts"] = {str(k): v for k, v in voices(prog, mod).items()}
     manifest["voice_why"] = {str(k): v for k, v in vwhy.items()}
+    voice_langs.apply(game, n, mod, manifest)  # voice-<lang>/: the same lines in the disc's other language copies
     claps.apply(mod, manifest)  # clap takes put the racket away (claps.py)
     st, params = cast(game, D, tp)
     manifest["source_stats"] = st.get(n, {})

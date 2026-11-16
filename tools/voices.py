@@ -1,9 +1,22 @@
 #!/usr/bin/env python3
 """Symlink each playable character's voice WAVs: out/voices/<game>/pcNN/<bank>_<NNN>.wav (+ <bank>_<cue name>.wav where the bank has names) (relative links into out/audio).
-usage: tools/voices.py   (run after tools/audio.py). Fore: the 3-letter code is mapped to NN via PC/PCNN/ dirs."""
-import os, re, collections
+usage: tools/voices.py   (run after tools/audio.py). Fore: the 3-letter code is mapped to NN via PC/PCNN/ dirs.
+A disc's other-language copy of a voice archive (notes/audio.md "Language", LANG) goes under out/voices/<game>-<lang>/
+instead, so out/voices/<game>/ is the English cast only (a link there into another language's copy is removed)."""
+import glob, os, re, collections
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 A, V = f"{R}/out/audio", f"{R}/out/voices"
+
+# The voice archives a disc keeps in another language besides the English copy (notes/audio.md "Language"):
+# Out of Bounds ga_pc_NN.xb (pc00 and pc07 hold English there too), Open Tee 2 hats/snd/*.xb (.xb1 is English).
+LANG = {"oob": lambda p: "ja" if (m := re.search(r"/sound/pc/ga_pc_(\d+)\.xb/", p)) and int(m[1]) not in (0, 7) else None,
+        "opentee2": lambda p: "ja" if re.search(r"/hats/snd/[^/]+\.xb/", p) else None}
+
+
+def lang(g, d):
+    """the language of bank dir d's archive copy when it isn't the English one, else None"""
+    return LANG.get(g, lambda p: None)(d.replace(os.sep, "/"))
+
 
 def banks(g):
     for d, ds, fs in os.walk(f"{A}/{g}"):
@@ -26,6 +39,10 @@ def who(g, d):
 def main():
     for g in ["fore", "getagrip", "opentee2", "oob"]:
         if not os.path.isdir(f"{A}/{g}"): continue
+        gone = 0
+        for t in glob.glob(f"{V}/{g}/*/*.wav"):  # another language's take linked before LANG
+            if os.path.islink(t) and lang(g, os.path.normpath(os.path.join(os.path.dirname(t), os.readlink(t)))):
+                os.remove(t); gone += 1
         code = {}
         if g == "fore":  # code -> NN from PC/PCNN/
             for d, _ in banks(g):
@@ -36,7 +53,8 @@ def main():
             w = who(g, d)
             if not w: continue
             if g == "fore": w = "pc" + (w[1:].zfill(2) if w[0] == "#" else code.get(w, "??" + w))
-            out = f"{V}/{g}/{w}"; os.makedirs(out, exist_ok=True)
+            ln = lang(g, d)
+            out = f"{V}/{g}-{ln}/{w}" if ln else f"{V}/{g}/{w}"; os.makedirs(out, exist_ok=True)
             b = os.path.basename(d).rsplit(".", 1)[0].lower()
             for f in fs:
                 t = f"{out}/{b}_{f}"
@@ -52,6 +70,6 @@ def main():
                             os.remove(t)
                         if not os.path.lexists(t):
                             os.symlink(rel, t)
-        print(g, len(n), "dirs", sum(n.values()), "links")
+        print(g, len(n), "dirs", sum(n.values()), "links", gone, "other-language links moved out")
 
 main()

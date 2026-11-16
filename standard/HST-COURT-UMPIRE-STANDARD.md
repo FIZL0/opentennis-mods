@@ -148,6 +148,7 @@ Spectators, ball kids, line judges, mascots: drawn and animated only, never touc
 mods/<id>/
   mod.json
   voice/<program>_<key>.wav   the calls (§3a); any missing → the donor's
+  voice-<lang>/…              optional: the calls in another language (§3a)
   umpire.glb                  optional: model + motions (§3b); absent → the donor's model
   previews/umpire.png         optional: the umpire select's picture (384×480 RGBA PNG, transparent background)
 ```
@@ -165,6 +166,9 @@ mods/<id>/
   voice fills any call the mod doesn't ship, and whose model is drawn when there's no `umpire.glb`. The mod's own
   clip plays in place of the donor's take but never moves the timeline: keep each clip about as long as the
   donor's (a longer one is cut when the next word starts).
+- `voice_language`, `voice_languages` (optional): the calls in the source game's other languages, one folder each,
+  exactly as the character standard §5 *Other languages*: Voice Language picks the folder, a call it lacks plays
+  `voice/`'s (and one `voice/` lacks, the donor's); the timing stays the donor's whatever is heard.
 - Optional, informational: `donor_why`, `calls` (the list of `program_key` it ships, for Browse's "n of 24
   calls"), `language`, `todo`.
 
