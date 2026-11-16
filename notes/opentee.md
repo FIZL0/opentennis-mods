@@ -116,6 +116,10 @@ both casts) feeds package.py's golf() path, gag_stats.overrides and sizing.py.
   lines ("Oh dear!", "This can't be!") into the win programs. OT2's own `cd_hy_NN`/`cd_ma_NN` are the caddies'.
   Same for pc10-20 (incl. their `b` take sets), mis-hit/whiff 2/4 (MISS: "What?", "Hmm", "Uh-oh") and extra shouts
   for Shu (none shared), Patricia and Roger (SHOUT). Only English takes; more in `out/voice_candidates/` (notes/audio.md).
+  **Japanese** (opentennis M173): both copies of a bank carry the same SEQD cue slots for the same lines, though wave
+  numbers can shift (one copy holds an extra take), so `voice_langs.py` writes `voice-ja/` by slot: an English slot's
+  main wave → the `.xb` bank's same slot's. Covers every take but Mika's slip line (her last st slot has no Japanese
+  copy); checked by faster-whisper on the longest takes of seven pcs (same meaning, ja detected).
   5 (hit by the ball, opentennis B560): per actor the most pained short take by transcript (HIT: "Ouch!" Mika/CJ,
   "Ow." Alia, "Ugh!"/"Agh!"/"Yikes!", else a startled "Ah!"/"Oh!"; Roger "What?!").
 - **Reactions** (`out/anims/<game>/pcNN_<slug>.glb`): re_gu = OT2 `kuNN_gl` (glad emote) / OT1 `ga_pcNN_bi_r00`

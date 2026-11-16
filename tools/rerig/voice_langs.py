@@ -16,6 +16,12 @@ Rules, read from the disc at run time (no clip lists):
   wave voices() takes: the slot's longest note) or as a cue mixed whole (oob_data.results, out/voices/oob_cues/)
   is the Japanese bank's same slot, taken or mixed the same way. Takes the English picks found by transcript in the
   other banks (hit cry, more_voices) have no slot to follow and stay English.
+- Open Tee 2 keeps every hats/snd voice bank twice: `pc_<kind>_NN<v>.xb1` English and `.xb` Japanese (all 21 pcs).
+  Its picks are waves of the English banks by number (opentee_data, chosen by transcript), and a wave's number is not
+  its counterpart's (one copy can hold an extra take, shifting the rest), but both copies of a bank carry the same
+  SEQD cue slots for the same lines: a wave that is an English slot's main wave is the Japanese bank's same slot's
+  main wave. The g/gb banks have no region table (no slots) and are never picked; an English slot with no Japanese
+  slot (one in Mika's st banks) has no counterpart.
 """
 import glob
 import hashlib
@@ -57,7 +63,8 @@ class Oob:
             return None
         return f[0], self.d._p(self.d.AUD, os.path.relpath(f[0], self.d._p(self.d.USR)))
 
-    def _main_wave(self, cue, samples, wd):
+    @staticmethod
+    def _main_wave(cue, samples, wd):
         notes = cue[1]
         if not notes:
             return None
@@ -92,8 +99,40 @@ class Oob:
         return out
 
 
+class OpenTee2:
+    """Open Tee 2: English hats/snd bank (.xb1) slot -> the Japanese copy's (.xb) same slot."""
+
+    def __init__(self):
+        import oob_data
+        import opentee_data
+        self.sgxd, self.d = oob_data.sgxd, opentee_data
+
+    def counterparts(self, pc, lang):
+        if lang != "ja":
+            return {}
+        usr = self.d._p(self.d.USR.format(g="opentee2"), "hats/snd")
+        out = {}
+        for en in sorted(glob.glob(os.path.join(usr, f"pc_*_{pc:02d}[ab].xb1/data/sound/pc_*_{pc:02d}[ab].sgd"))):
+            ja = en.replace(".xb1/", ".xb/")
+            if not os.path.exists(ja):
+                continue
+            try:
+                (ecues, esamples), (jcues, jsamples) = self.sgxd(en), self.sgxd(ja)
+            except KeyError:  # no region table: the g/gb banks
+                continue
+            ewd, jwd = (f.replace("out/files", "out/audio", 1) for f in (en, ja))
+            for slot in sorted(ecues):
+                if slot not in jcues:
+                    continue
+                ef = Oob._main_wave(ecues[slot], esamples, ewd)
+                jf = Oob._main_wave(jcues[slot], jsamples, jwd)
+                if ef and jf:
+                    out.setdefault(_md5(ef), jf)
+        return out
+
+
 # source game -> {language tag: its rule}; the tags are the game's Voice Language ones (en fr it de es ja)
-COPIES = {"oob": {"ja": Oob}}
+COPIES = {"oob": {"ja": Oob}, "opentee2": {"ja": OpenTee2}}
 
 
 def apply(game, pc, mod, manifest):
